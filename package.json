@@ -1,0 +1,25 @@
+{
+  "name": "spayd-applied",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "ibantools": "^4.3.4",
+    "preact": "^10.16.0",
+    "qrcode": "^1.5.2",
+    "spayd": "^3.0.3"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.5.0",
+    "@types/node": "^20.8.2",
+    "ts-node": "^10.9.1",
+    "tsc": "^2.0.4",
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5"
+  }
+}
