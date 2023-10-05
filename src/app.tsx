@@ -16,7 +16,7 @@ export function App() {
   let country = "CZ";
   let bankNo = 2010;
   let bankCode = bankNo.toString().padStart(4, "0");
-  let prefix = 23;
+  let prefix = 0;
   let acc = 4159;
   let prefixCode = prefix.toString().padStart(6, "0");
   let accCode = acc.toString().padStart(10, "0");
@@ -59,10 +59,6 @@ export function App() {
       <h1>Test</h1>
       <img ref={refImg} />
       <br />
-      <a href="https://github.com/tajnymag/spayd-js">
-        https://github.com/tajnymag/spayd-js
-      </a>
-      <hr />
       <div>iban:{iban_f}</div>
       <div>{JSON.stringify(payment)}</div>
       <div>
@@ -70,10 +66,6 @@ export function App() {
         <br />
         <a href={spaydStringB64pfx}>data/url</a>
       </div>
-      <hr />
-      <a href="https://www.kutac.cz/pocitace-a-internety/generovani-a-kontrola-ibanu-pro-cz-i-sk-ucty">
-        https://www.kutac.cz/pocitace-a-internety/generovani-a-kontrola-ibanu-pro-cz-i-sk-ucty
-      </a>
     </>
   );
 }
