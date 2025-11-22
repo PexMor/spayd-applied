@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'preact/hooks';
+import { useI18n } from '../I18nContext';
 import { getAccounts, addAccount, updateAccount, deleteAccount, type Account } from '../db';
 import { friendlyFormatIBAN, isValidIBAN } from 'ibantools';
 import { ConfirmDialog } from './Dialog';
 
 export function AccountManager() {
+    const { t } = useI18n();
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
@@ -62,7 +64,7 @@ export function AccountManager() {
 
         // Validate IBAN
         if (!isValidIBAN(formData.iban)) {
-            setError('Invalid IBAN format');
+            setError(t.invalidIban);
             return;
         }
 
@@ -82,7 +84,7 @@ export function AccountManager() {
             await loadAccounts();
             closeForm();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to save account');
+            setError(err instanceof Error ? err.message : t.failedToCreateAccount);
         }
     }
 
@@ -101,17 +103,17 @@ export function AccountManager() {
     return (
         <div className="fade-in">
             <div className="flex justify-between items-center mb-lg">
-                <h2>Bank Accounts</h2>
+                <h2>{t.accounts}</h2>
                 <button className="btn btn-primary" onClick={() => openForm()}>
-                    + Add Account
+                    {t.addAccount}
                 </button>
             </div>
 
             {accounts.length === 0 ? (
                 <div className="empty-state">
                     <div className="empty-state-icon">🏦</div>
-                    <h3>No accounts yet</h3>
-                    <p>Add your first bank account to start generating payments</p>
+                    <h3>{t.noAccountsYet}</h3>
+                    <p>{t.noAccountsMessage}</p>
                 </div>
             ) : (
                 <div className="grid grid-2">
@@ -120,22 +122,22 @@ export function AccountManager() {
                             <div className="flex justify-between items-center mb-md">
                                 <h3 className="text-lg">{account.name}</h3>
                                 {account.isDefault && (
-                                    <span className="badge badge-acked">Default</span>
+                                    <span className="badge badge-acked">{t.default}</span>
                                 )}
                             </div>
                             <div className="mb-sm">
-                                <div className="text-sm text-secondary">IBAN</div>
+                                <div className="text-sm text-secondary">{t.iban}</div>
                                 <div className="font-mono text-sm">
                                     {friendlyFormatIBAN(account.iban) || account.iban}
                                 </div>
                             </div>
                             <div className="mb-sm">
-                                <div className="text-sm text-secondary">Currency</div>
+                                <div className="text-sm text-secondary">{t.currency}</div>
                                 <div className="text-sm">{account.currency}</div>
                             </div>
                             {account.webhookUrl && (
                                 <div className="mb-sm">
-                                    <div className="text-sm text-secondary">Webhook URL</div>
+                                    <div className="text-sm text-secondary">{t.webhookUrl}</div>
                                     <div className="text-sm font-mono" style={{ wordBreak: 'break-all' }}>
                                         {account.webhookUrl}
                                     </div>
@@ -146,13 +148,13 @@ export function AccountManager() {
                                     className="btn btn-secondary btn-sm"
                                     onClick={() => openForm(account)}
                                 >
-                                    Edit
+                                    {t.edit}
                                 </button>
                                 <button
                                     className="btn btn-danger btn-sm"
                                     onClick={() => handleDelete(account)}
                                 >
-                                    Delete
+                                    {t.delete}
                                 </button>
                             </div>
                         </div>
@@ -165,7 +167,7 @@ export function AccountManager() {
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2 className="modal-title">
-                                {editingAccount ? 'Edit Account' : 'Add Account'}
+                                {editingAccount ? t.editAccount : t.addAccount.replace('+ ', '')}
                             </h2>
                             <button className="modal-close" onClick={closeForm}>
                                 ×
@@ -174,36 +176,36 @@ export function AccountManager() {
 
                         <form onSubmit={handleSubmit}>
                             <div className="form-group">
-                                <label className="form-label">Account Name</label>
+                                <label className="form-label">{t.accountName}</label>
                                 <input
                                     type="text"
                                     value={formData.name}
                                     onInput={(e) =>
                                         setFormData({ ...formData, name: (e.target as HTMLInputElement).value })
                                     }
-                                    placeholder="e.g., Main Business Account"
+                                    placeholder={t.accountNamePlaceholder}
                                     required
                                 />
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">IBAN</label>
+                                <label className="form-label">{t.iban}</label>
                                 <input
                                     type="text"
                                     value={formData.iban}
                                     onInput={(e) =>
                                         setFormData({ ...formData, iban: (e.target as HTMLInputElement).value })
                                     }
-                                    placeholder="CZ6508000000192000145399"
+                                    placeholder={t.ibanPlaceholder}
                                     required
                                 />
                                 <div className="form-help">
-                                    Enter the IBAN without spaces (e.g., CZ6508000000192000145399)
+                                    {t.ibanHelp}
                                 </div>
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">Currency</label>
+                                <label className="form-label">{t.currency}</label>
                                 <select
                                     value={formData.currency}
                                     onChange={(e) =>
@@ -217,17 +219,17 @@ export function AccountManager() {
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">Webhook URL (Optional)</label>
+                                <label className="form-label">{t.webhookUrl} ({t.optional})</label>
                                 <input
                                     type="url"
                                     value={formData.webhookUrl}
                                     onInput={(e) =>
                                         setFormData({ ...formData, webhookUrl: (e.target as HTMLInputElement).value })
                                     }
-                                    placeholder="https://api.example.com/webhook"
+                                    placeholder={t.webhookUrlPlaceholder}
                                 />
                                 <div className="form-help">
-                                    URL to send payment notifications (leave empty to disable sync)
+                                    {t.webhookUrlHelp}
                                 </div>
                             </div>
 
@@ -241,7 +243,7 @@ export function AccountManager() {
                                         }
                                     />
                                     <span className="form-label" style={{ marginBottom: 0 }}>
-                                        Set as default account
+                                        {t.setAsDefault}
                                     </span>
                                 </label>
                             </div>
@@ -250,10 +252,10 @@ export function AccountManager() {
 
                             <div className="flex gap-sm justify-between">
                                 <button type="button" className="btn btn-secondary" onClick={closeForm}>
-                                    Cancel
+                                    {t.cancel}
                                 </button>
                                 <button type="submit" className="btn btn-primary">
-                                    {editingAccount ? 'Update' : 'Create'} Account
+                                    {editingAccount ? t.update : t.create} {t.account}
                                 </button>
                             </div>
                         </form>
@@ -263,7 +265,7 @@ export function AccountManager() {
 
             {deleteConfirm && (
                 <ConfirmDialog
-                    message={`Are you sure you want to delete account "${deleteConfirm.account.name}"?`}
+                    message={`${t.deleteAccountConfirm} "${deleteConfirm.account.name}"?`}
                     onConfirm={confirmDelete}
                     onCancel={() => setDeleteConfirm(null)}
                 />

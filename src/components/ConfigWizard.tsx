@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import { JSX } from 'preact';
+import { useI18n } from '../I18nContext';
 import { addAccount, addEvent, initializeWithSampleData } from '../db';
 import { isValidIBAN } from 'ibantools';
 import { AlertDialog } from './Dialog';
@@ -12,6 +13,7 @@ interface ConfigWizardProps {
 type Step = 'choice' | 'account' | 'event';
 
 export function ConfigWizard({ onComplete }: ConfigWizardProps) {
+    const { t, locale } = useI18n();
     const [currentStep, setCurrentStep] = useState<Step>('choice');
 
     // Account form state
@@ -33,10 +35,10 @@ export function ConfigWizard({ onComplete }: ConfigWizardProps) {
     async function handleUseDemoData() {
         setIsSubmitting(true);
         try {
-            await initializeWithSampleData();
+            await initializeWithSampleData(locale);
             onComplete();
         } catch (err) {
-            setShowAlert('Failed to load demo data: ' + (err instanceof Error ? err.message : 'Unknown error'));
+            setShowAlert(t.failedToLoadDemoData + (err instanceof Error ? err.message : t.unknownError));
             setIsSubmitting(false);
         }
     }
@@ -47,7 +49,7 @@ export function ConfigWizard({ onComplete }: ConfigWizardProps) {
 
         // Validate IBAN
         if (!isValidIBAN(accountIban)) {
-            setAccountError('Please enter a valid IBAN');
+            setAccountError(t.pleaseEnterValidIban);
             return;
         }
 
@@ -67,7 +69,7 @@ export function ConfigWizard({ onComplete }: ConfigWizardProps) {
             // Move to event step
             setCurrentStep('event');
         } catch (err) {
-            setAccountError(err instanceof Error ? err.message : 'Failed to create account');
+            setAccountError(err instanceof Error ? err.message : t.failedToCreateAccount);
         } finally {
             setIsSubmitting(false);
         }
@@ -79,7 +81,7 @@ export function ConfigWizard({ onComplete }: ConfigWizardProps) {
 
         // Validate static symbol (should be numeric)
         if (!/^\d{1,4}$/.test(eventStaticSymbol)) {
-            setEventError('Static symbol must be 1-4 digits');
+            setEventError(t.staticSymbolMust1to4);
             return;
         }
 
@@ -102,7 +104,7 @@ export function ConfigWizard({ onComplete }: ConfigWizardProps) {
             // Configuration complete!
             onComplete();
         } catch (err) {
-            setEventError(err instanceof Error ? err.message : 'Failed to create event');
+            setEventError(err instanceof Error ? err.message : t.failedToCreateEvent);
         } finally {
             setIsSubmitting(false);
         }
@@ -112,14 +114,14 @@ export function ConfigWizard({ onComplete }: ConfigWizardProps) {
         <div className="config-wizard">
             <div className="wizard-container">
                 <div className="wizard-header">
-                    <h1>Welcome to SPAYD Generator</h1>
+                    <h1>{t.welcomeToSpayd}</h1>
                 </div>
 
                 {/* Step 0: Choice - Demo Data or Own Data */}
                 {currentStep === 'choice' && (
                     <div className="wizard-content fade-in">
                         <p className="wizard-intro">
-                            To get started, you need at least one bank account and one event.
+                            {t.wizardIntro}
                         </p>
 
                         <div className="choice-container">
@@ -130,8 +132,8 @@ export function ConfigWizard({ onComplete }: ConfigWizardProps) {
                                 type="button"
                             >
                                 <div className="choice-icon">🎯</div>
-                                <h3>Use Demo Data</h3>
-                                <p>Start quickly with sample accounts and events. Perfect for testing!</p>
+                                <h3>{t.useDemoData}</h3>
+                                <p>{t.useDemoDataDesc}</p>
                             </button>
 
                             <button
@@ -141,8 +143,8 @@ export function ConfigWizard({ onComplete }: ConfigWizardProps) {
                                 type="button"
                             >
                                 <div className="choice-icon">✏️</div>
-                                <h3>Create Your Own</h3>
-                                <p>Set up your own bank account and event from scratch.</p>
+                                <h3>{t.createYourOwn}</h3>
+                                <p>{t.createYourOwnDesc}</p>
                             </button>
                         </div>
                     </div>
@@ -152,47 +154,47 @@ export function ConfigWizard({ onComplete }: ConfigWizardProps) {
                 {currentStep === 'account' && (
                     <div className="wizard-step fade-in">
                         <div className="step-icon">🏦</div>
-                        <h2 className="step-title">Create Your First Account</h2>
+                        <h2 className="step-title">{t.createFirstAccount}</h2>
                         <p className="step-description">
-                            Add the bank account where you'll receive payments
+                            {t.createFirstAccountDesc}
                         </p>
 
                         <form onSubmit={handleAccountSubmit}>
                             <div className="form-group">
-                                <label className="form-label">Account Name</label>
+                                <label className="form-label">{t.accountName}</label>
                                 <input
                                     type="text"
                                     value={accountName}
                                     onInput={(e) => setAccountName((e.target as HTMLInputElement).value)}
-                                    placeholder="e.g., Main Business Account"
+                                    placeholder={t.accountNamePlaceholder}
                                     required
                                     autoFocus
                                 />
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">IBAN</label>
+                                <label className="form-label">{t.iban}</label>
                                 <input
                                     type="text"
                                     value={accountIban}
                                     onInput={(e) => setAccountIban((e.target as HTMLInputElement).value)}
-                                    placeholder="e.g., CZ65 0800 0000 1920 0014 5399"
+                                    placeholder={t.ibanPlaceholder}
                                     required
                                 />
-                                <div className="form-help">Include spaces for easier reading</div>
+                                <div className="form-help">{t.includeSpacesHelp}</div>
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">Currency</label>
+                                <label className="form-label">{t.currency}</label>
                                 <select
                                     value={accountCurrency}
                                     onChange={(e) => setAccountCurrency((e.target as HTMLSelectElement).value)}
                                     required
                                 >
-                                    <option value="CZK">CZK - Czech Koruna</option>
-                                    <option value="EUR">EUR - Euro</option>
-                                    <option value="USD">USD - US Dollar</option>
-                                    <option value="GBP">GBP - British Pound</option>
+                                    <option value="CZK">{t.currencyCzk}</option>
+                                    <option value="EUR">{t.currencyEur}</option>
+                                    <option value="USD">{t.currencyUsd}</option>
+                                    <option value="GBP">{t.currencyGbp}</option>
                                 </select>
                             </div>
 
@@ -206,10 +208,10 @@ export function ConfigWizard({ onComplete }: ConfigWizardProps) {
                                 {isSubmitting ? (
                                     <>
                                         <div className="spinner"></div>
-                                        Creating...
+                                        {t.creating}
                                     </>
                                 ) : (
-                                    'Continue to Event →'
+                                    t.continueToEvent
                                 )}
                             </button>
                         </form>
@@ -220,61 +222,61 @@ export function ConfigWizard({ onComplete }: ConfigWizardProps) {
                 {currentStep === 'event' && (
                     <div className="wizard-step fade-in">
                         <div className="step-icon">📅</div>
-                        <h2 className="step-title">Create Your First Event</h2>
+                        <h2 className="step-title">{t.createFirstEvent}</h2>
                         <p className="step-description">
-                            Events help organize payments by purpose (e.g., workshop fees, memberships)
+                            {t.createFirstEventDesc}
                         </p>
 
                         <form onSubmit={handleEventSubmit}>
                             <div className="form-group">
-                                <label className="form-label">Event Name</label>
+                                <label className="form-label">{t.eventName}</label>
                                 <input
                                     type="text"
                                     value={eventName}
                                     onInput={(e) => setEventName((e.target as HTMLInputElement).value)}
-                                    placeholder="e.g., Workshop 2024"
+                                    placeholder={t.eventNamePlaceholder}
                                     required
                                     autoFocus
                                 />
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">Static Symbol (SS)</label>
+                                <label className="form-label">{t.staticSymbol}</label>
                                 <input
                                     type="text"
                                     value={eventStaticSymbol}
                                     onInput={(e) => setEventStaticSymbol((e.target as HTMLInputElement).value)}
-                                    placeholder="e.g., 543"
+                                    placeholder={t.staticSymbolPlaceholder}
                                     maxLength={4}
                                     required
                                 />
-                                <div className="form-help">1-4 digits to identify this event</div>
+                                <div className="form-help">{t.staticSymbolHelp1to4}</div>
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">Variable Symbol (VS) Mode</label>
+                                <label className="form-label">{t.variableSymbolMode}</label>
                                 <select
                                     value={eventVsMode}
                                     onChange={(e) => setEventVsMode((e.target as HTMLSelectElement).value as any)}
                                     required
                                 >
-                                    <option value="counter">Counter - Auto-increment (e.g., 1, 2, 3...)</option>
-                                    <option value="time">Timestamp - Based on generation time</option>
-                                    <option value="static">Static - Always the same value</option>
+                                    <option value="counter">{t.vsModeCounterDesc}</option>
+                                    <option value="time">{t.vsModeTimeDesc}</option>
+                                    <option value="static">{t.vsModeStaticDesc}</option>
                                 </select>
-                                <div className="form-help">How to generate variable symbols for payments</div>
+                                <div className="form-help">{t.vsModeHowToGenerate}</div>
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">Default Amount (Optional)</label>
+                                <label className="form-label">{t.defaultAmountOptional}</label>
                                 <input
                                     type="number"
                                     step="0.01"
                                     value={eventPermanentAmount}
                                     onInput={(e) => setEventPermanentAmount((e.target as HTMLInputElement).value)}
-                                    placeholder="e.g., 450.00"
+                                    placeholder={t.permanentAmountPlaceholder}
                                 />
-                                <div className="form-help">Set a standard price for this event</div>
+                                <div className="form-help">{t.setStandardPrice}</div>
                             </div>
 
                             {eventError && <div className="form-error">{eventError}</div>}
@@ -286,7 +288,7 @@ export function ConfigWizard({ onComplete }: ConfigWizardProps) {
                                     onClick={() => setCurrentStep('account')}
                                     disabled={isSubmitting}
                                 >
-                                    ← Back
+                                    {t.back}
                                 </button>
                                 <button
                                     type="submit"
@@ -296,10 +298,10 @@ export function ConfigWizard({ onComplete }: ConfigWizardProps) {
                                     {isSubmitting ? (
                                         <>
                                             <div className="spinner"></div>
-                                            Creating...
+                                            {t.creating}
                                         </>
                                     ) : (
-                                        'Complete Setup ✨'
+                                        t.completeSetup
                                     )}
                                 </button>
                             </div>

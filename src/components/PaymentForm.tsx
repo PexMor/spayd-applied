@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import { JSX } from 'preact';
+import { useI18n } from '../I18nContext';
 import { getAccounts, getEvents, type Account, type Event } from '../db';
 import { generatePayment } from '../services/payment-generator';
 import { friendlyFormatIBAN } from 'ibantools';
@@ -7,6 +8,7 @@ import { AlertDialog } from './Dialog';
 import './PaymentForm.css';
 
 export function PaymentForm() {
+    const { t } = useI18n();
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [events, setEvents] = useState<Event[]>([]);
     const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
@@ -60,7 +62,7 @@ export function PaymentForm() {
     async function handleGenerate(e: JSX.TargetedEvent<HTMLFormElement, SubmitEvent>) {
         e.preventDefault();
         if (!selectedAccountId || !selectedEventId) {
-            setError('Please select both account and event');
+            setError(t.pleaseSelectBothAccountAndEvent);
             return;
         }
 
@@ -70,7 +72,7 @@ export function PaymentForm() {
         try {
             const amountValue = parseFloat(amount);
             if (isNaN(amountValue) || amountValue <= 0) {
-                throw new Error('Invalid amount');
+                throw new Error(t.invalidAmount);
             }
 
             const payment = await generatePayment(selectedAccountId, selectedEventId, amountValue, {
@@ -84,7 +86,7 @@ export function PaymentForm() {
 
             // Don't reset - let auto-apply logic handle it when event changes
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to generate payment');
+            setError(err instanceof Error ? err.message : t.failedToGeneratePayment);
         } finally {
             setIsGenerating(false);
         }
@@ -92,7 +94,7 @@ export function PaymentForm() {
 
     function copyToClipboard(text: string) {
         navigator.clipboard.writeText(text);
-        setShowAlert('Copied to clipboard!');
+        setShowAlert(t.copiedToClipboard);
     }
 
     // Mobile-first: Show QR code full screen after generation
@@ -100,12 +102,12 @@ export function PaymentForm() {
         return (
             <div className="payment-result fade-in">
                 <div className="result-header">
-                    <h2>Payment QR Code</h2>
+                    <h2>{t.paymentQrCode}</h2>
                     <button
                         className="btn btn-secondary btn-sm"
                         onClick={() => setGeneratedPayment(null)}
                     >
-                        ← Back
+                        {t.backButton}
                     </button>
                 </div>
 
@@ -118,34 +120,34 @@ export function PaymentForm() {
                         <div className="amount-value">
                             {generatedPayment.amount} {generatedPayment.currency}
                         </div>
-                        <div className="amount-label">Amount</div>
+                        <div className="amount-label">{t.amount}</div>
                     </div>
 
                     <div className="result-info">
                         <div className="info-row">
-                            <span className="info-label">Variable Symbol</span>
+                            <span className="info-label">{t.variableSymbol}</span>
                             <span className="info-value font-mono">{generatedPayment.variableSymbol}</span>
                         </div>
                         <div className="info-row">
-                            <span className="info-label">Static Symbol</span>
+                            <span className="info-label">{t.staticSymbolSimple}</span>
                             <span className="info-value font-mono">{generatedPayment.staticSymbol}</span>
                         </div>
                         {generatedPayment.message && (
                             <div className="info-row">
-                                <span className="info-label">Message</span>
+                                <span className="info-label">{t.message}</span>
                                 <span className="info-value">{generatedPayment.message}</span>
                             </div>
                         )}
                     </div>
 
                     <div className="spayd-string-container">
-                        <div className="text-sm text-secondary mb-xs">SPAYD String</div>
+                        <div className="text-sm text-secondary mb-xs">{t.spaydString}</div>
                         <div className="spayd-string">
                             <button
                                 className="copy-button"
                                 onClick={() => copyToClipboard(generatedPayment.spaydString)}
                             >
-                                Copy
+                                {t.copyToClipboard}
                             </button>
                             {generatedPayment.spaydString}
                         </div>
@@ -162,13 +164,13 @@ export function PaymentForm() {
                             link.click();
                         }}
                     >
-                        💾 Download
+                        💾 {t.download}
                     </button>
                     <button
                         className="btn btn-primary"
                         onClick={() => setGeneratedPayment(null)}
                     >
-                        ✨ Generate Another
+                        {t.generateAnother}
                     </button>
                 </div>
             </div>
@@ -187,14 +189,14 @@ export function PaymentForm() {
                         <div className="summary-row">
                             <span className="summary-icon">🏦</span>
                             <div className="summary-content">
-                                <div className="summary-label">Account</div>
+                                <div className="summary-label">{t.account}</div>
                                 <div className="summary-value">{selectedAccount.name}</div>
                             </div>
                         </div>
                         <div className="summary-row">
                             <span className="summary-icon">📅</span>
                             <div className="summary-content">
-                                <div className="summary-label">Event</div>
+                                <div className="summary-label">{t.event}</div>
                                 <div className="summary-value">{selectedEvent.name}</div>
                             </div>
                         </div>
@@ -213,7 +215,7 @@ export function PaymentForm() {
                 {showAdvanced && (
                     <div className="advanced-section fade-in">
                         <div className="form-group">
-                            <label className="form-label">Account</label>
+                            <label className="form-label">{t.account}</label>
                             <select
                                 value={selectedAccountId || ''}
                                 onChange={(e) =>
@@ -232,7 +234,7 @@ export function PaymentForm() {
                         </div>
 
                         <div className="form-group">
-                            <label className="form-label">Event</label>
+                            <label className="form-label">{t.event}</label>
                             <select
                                 value={selectedEventId || ''}
                                 onChange={(e) =>
@@ -255,8 +257,8 @@ export function PaymentForm() {
                 {/* Amount Input - PROMINENT or disabled if from event */}
                 <div className="amount-input-container">
                     <label className="amount-label">
-                        Amount ({selectedAccount?.currency || 'CZK'})
-                        {hasEventAmount && <span className="fixed-badge">Fixed</span>}
+                        {t.amount} ({selectedAccount?.currency || 'CZK'})
+                        {hasEventAmount && <span className="fixed-badge">{t.fixed}</span>}
                     </label>
                     <input
                         type="number"
@@ -275,8 +277,8 @@ export function PaymentForm() {
                 <div className="message-section">
                     <div className="form-group">
                         <label className="form-label">
-                            Message (Optional)
-                            {hasEventMessage && <span className="fixed-badge">Fixed</span>}
+                            {t.messageOptional}
+                            {hasEventMessage && <span className="fixed-badge">{t.fixed}</span>}
                         </label>
                         <input
                             type="text"
@@ -299,12 +301,12 @@ export function PaymentForm() {
                     {isGenerating ? (
                         <>
                             <div className="spinner"></div>
-                            Generating...
+                            {t.generating}
                         </>
                     ) : (
                         <>
                             <span className="btn-icon">📱</span>
-                            Generate QR Code
+                            {t.generateQrCode}
                         </>
                     )}
                 </button>

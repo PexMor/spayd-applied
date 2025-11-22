@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'preact/hooks';
+import { useI18n } from '../I18nContext';
 import { getSyncQueue, resetSyncFlags, type SyncQueueItem } from '../db';
 import {
     processSyncQueue,
@@ -7,6 +8,7 @@ import {
 } from '../services/sync-service';
 
 export function SyncQueue() {
+    const { t } = useI18n();
     const [queueItems, setQueueItems] = useState<SyncQueueItem[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -43,7 +45,7 @@ export function SyncQueue() {
     }
 
     async function handleResetAll() {
-        if (confirm('Reset all sync flags? This will mark all items as pending.')) {
+        if (confirm(t.resetAllFlagsConfirm)) {
             await resetSyncFlags({ global: true });
             await loadQueue();
         }
@@ -73,6 +75,21 @@ export function SyncQueue() {
         }
     }
 
+    function getStatusLabel(status: SyncQueueItem['status']): string {
+        switch (status) {
+            case 'pending':
+                return t.pending;
+            case 'sent':
+                return t.sent;
+            case 'acked':
+                return t.acknowledged;
+            case 'failed':
+                return t.failed;
+            default:
+                return status;
+        }
+    }
+
     const pendingCount = queueItems.filter((i) => i.status === 'pending').length;
     const failedCount = queueItems.filter((i) => i.status === 'failed').length;
     const ackedCount = queueItems.filter((i) => i.status === 'acked').length;
@@ -80,14 +97,14 @@ export function SyncQueue() {
     return (
         <div className="fade-in">
             <div className="flex justify-between items-center mb-lg">
-                <h2>Sync Queue</h2>
+                <h2>{t.syncQueue}</h2>
                 <div className="flex gap-sm">
                     <button
                         className="btn btn-secondary"
                         onClick={handleRetryFailed}
                         disabled={isProcessing || failedCount === 0}
                     >
-                        🔄 Retry Failed
+                        {t.retryFailed}
                     </button>
                     <button
                         className="btn btn-primary"
@@ -97,10 +114,10 @@ export function SyncQueue() {
                         {isProcessing ? (
                             <>
                                 <div className="spinner"></div>
-                                Processing...
+                                {t.processing}
                             </>
                         ) : (
-                            '▶️ Process Queue'
+                            t.processQueue
                         )}
                     </button>
                 </div>
@@ -108,17 +125,17 @@ export function SyncQueue() {
 
             <div className="grid grid-3 mb-lg">
                 <div className="card">
-                    <div className="text-sm text-secondary">Pending</div>
+                    <div className="text-sm text-secondary">{t.pending}</div>
                     <div className="text-2xl font-bold">{pendingCount}</div>
                 </div>
                 <div className="card">
-                    <div className="text-sm text-secondary">Failed</div>
+                    <div className="text-sm text-secondary">{t.failed}</div>
                     <div className="text-2xl font-bold" style={{ color: 'var(--color-danger)' }}>
                         {failedCount}
                     </div>
                 </div>
                 <div className="card">
-                    <div className="text-sm text-secondary">Acknowledged</div>
+                    <div className="text-sm text-secondary">{t.acknowledged}</div>
                     <div className="text-2xl font-bold" style={{ color: 'var(--color-success)' }}>
                         {ackedCount}
                     </div>
@@ -128,15 +145,15 @@ export function SyncQueue() {
             {queueItems.length === 0 ? (
                 <div className="empty-state">
                     <div className="empty-state-icon">📭</div>
-                    <h3>No sync items</h3>
-                    <p>Generated payments will appear here if webhooks are configured</p>
+                    <h3>{t.noSyncItems}</h3>
+                    <p>{t.noSyncItemsMessage}</p>
                 </div>
             ) : (
                 <>
                     <div className="flex justify-between items-center mb-md">
-                        <h3>Queue Items ({queueItems.length})</h3>
+                        <h3>{t.queueItemsCount} ({queueItems.length})</h3>
                         <button className="btn btn-danger btn-sm" onClick={handleResetAll}>
-                            Reset All Flags
+                            {t.resetAllFlags}
                         </button>
                     </div>
 
@@ -144,13 +161,13 @@ export function SyncQueue() {
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Payment ID</th>
-                                    <th>Status</th>
-                                    <th>Attempts</th>
-                                    <th>Created</th>
-                                    <th>Last Attempt</th>
-                                    <th>Webhook URL</th>
-                                    <th>Actions</th>
+                                    <th>{t.paymentId}</th>
+                                    <th>{t.status}</th>
+                                    <th>{t.attempts}</th>
+                                    <th>{t.created}</th>
+                                    <th>{t.lastAttempt}</th>
+                                    <th>{t.webhookUrl2}</th>
+                                    <th>{t.actions}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -159,7 +176,7 @@ export function SyncQueue() {
                                         <td className="font-mono text-sm">#{item.paymentId}</td>
                                         <td>
                                             <span className={`badge ${getStatusBadgeClass(item.status)}`}>
-                                                {item.status}
+                                                {getStatusLabel(item.status)}
                                             </span>
                                         </td>
                                         <td>{item.attempts}</td>
@@ -176,7 +193,7 @@ export function SyncQueue() {
                                                     className="btn btn-success btn-sm"
                                                     onClick={() => handleAcknowledge(item.id!)}
                                                 >
-                                                    ✓ Ack
+                                                    {t.acknowledge}
                                                 </button>
                                             )}
                                             {item.status === 'failed' && item.error && (
@@ -184,7 +201,7 @@ export function SyncQueue() {
                                                     className="btn btn-secondary btn-sm"
                                                     onClick={() => alert(item.error)}
                                                 >
-                                                    View Error
+                                                    {t.viewError}
                                                 </button>
                                             )}
                                         </td>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'preact/hooks';
+import { useI18n } from '../I18nContext';
 import {
     getPayments,
     getAccounts,
@@ -10,6 +11,7 @@ import {
 } from '../db';
 
 export function PaymentHistory() {
+    const { t } = useI18n();
     const [payments, setPayments] = useState<Payment[]>([]);
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [events, setEvents] = useState<Event[]>([]);
@@ -36,7 +38,7 @@ export function PaymentHistory() {
 
     async function handleDelete(payment: Payment) {
         if (!payment.id) return;
-        if (confirm('Are you sure you want to delete this payment?')) {
+        if (confirm(t.deletePaymentConfirm)) {
             await deletePayment(payment.id);
             await loadData();
             if (selectedPayment?.id === payment.id) {
@@ -46,11 +48,11 @@ export function PaymentHistory() {
     }
 
     function getAccountName(accountId: number): string {
-        return accounts.find((a) => a.id === accountId)?.name || 'Unknown';
+        return accounts.find((a) => a.id === accountId)?.name || t.unknown;
     }
 
     function getEventName(eventId: number): string {
-        return events.find((e) => e.id === eventId)?.name || 'Unknown';
+        return events.find((e) => e.id === eventId)?.name || t.unknown;
     }
 
     function formatDate(timestamp: number): string {
@@ -59,18 +61,18 @@ export function PaymentHistory() {
 
     function copyToClipboard(text: string) {
         navigator.clipboard.writeText(text);
-        alert('Copied to clipboard!');
+        alert(t.copiedToClipboard);
     }
 
     return (
         <div className="fade-in">
-            <h2 className="mb-lg">Payment History</h2>
+            <h2 className="mb-lg">{t.paymentHistory}</h2>
 
             <div className="card mb-lg">
-                <h3 className="mb-md">Filters</h3>
+                <h3 className="mb-md">{t.filters}</h3>
                 <div className="flex gap-md">
                     <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                        <label className="form-label">Account</label>
+                        <label className="form-label">{t.account}</label>
                         <select
                             value={filterAccountId || ''}
                             onChange={(e) =>
@@ -81,7 +83,7 @@ export function PaymentHistory() {
                                 )
                             }
                         >
-                            <option value="">All Accounts</option>
+                            <option value="">{t.allAccounts}</option>
                             {accounts.map((account) => (
                                 <option key={account.id} value={account.id}>
                                     {account.name}
@@ -91,7 +93,7 @@ export function PaymentHistory() {
                     </div>
 
                     <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                        <label className="form-label">Event</label>
+                        <label className="form-label">{t.event}</label>
                         <select
                             value={filterEventId || ''}
                             onChange={(e) =>
@@ -102,7 +104,7 @@ export function PaymentHistory() {
                                 )
                             }
                         >
-                            <option value="">All Events</option>
+                            <option value="">{t.allEvents}</option>
                             {events.map((event) => (
                                 <option key={event.id} value={event.id}>
                                     {event.name}
@@ -116,8 +118,8 @@ export function PaymentHistory() {
             {payments.length === 0 ? (
                 <div className="empty-state">
                     <div className="empty-state-icon">📋</div>
-                    <h3>No payments found</h3>
-                    <p>Generate your first payment to see it here</p>
+                    <h3>{t.noPaymentsFound}</h3>
+                    <p>{t.noPaymentsMessage}</p>
                 </div>
             ) : (
                 <div className="grid grid-2">
@@ -126,12 +128,12 @@ export function PaymentHistory() {
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>Date</th>
-                                        <th>Account</th>
-                                        <th>Event</th>
-                                        <th>Amount</th>
-                                        <th>VS</th>
-                                        <th>Actions</th>
+                                        <th>{t.date}</th>
+                                        <th>{t.account}</th>
+                                        <th>{t.event}</th>
+                                        <th>{t.amount}</th>
+                                        <th>{t.vs}</th>
+                                        <th>{t.actions}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -150,13 +152,13 @@ export function PaymentHistory() {
                                                         className="btn btn-secondary btn-sm"
                                                         onClick={() => setSelectedPayment(payment)}
                                                     >
-                                                        View
+                                                        {t.view}
                                                     </button>
                                                     <button
                                                         className="btn btn-danger btn-sm"
                                                         onClick={() => handleDelete(payment)}
                                                     >
-                                                        Delete
+                                                        {t.delete}
                                                     </button>
                                                 </div>
                                             </td>
@@ -170,59 +172,59 @@ export function PaymentHistory() {
                     <div>
                         {selectedPayment ? (
                             <div className="card fade-in">
-                                <h3 className="mb-md">Payment Details</h3>
+                                <h3 className="mb-md">{t.paymentDetails}</h3>
 
                                 <div className="qr-display mb-lg">
                                     <img src={selectedPayment.qrCodeDataUrl} alt="Payment QR Code" />
                                 </div>
 
                                 <div className="mb-md">
-                                    <div className="text-sm text-secondary mb-xs">Date</div>
+                                    <div className="text-sm text-secondary mb-xs">{t.date}</div>
                                     <div>{formatDate(selectedPayment.createdAt)}</div>
                                 </div>
 
                                 <div className="mb-md">
-                                    <div className="text-sm text-secondary mb-xs">Account</div>
+                                    <div className="text-sm text-secondary mb-xs">{t.account}</div>
                                     <div>{getAccountName(selectedPayment.accountId)}</div>
                                 </div>
 
                                 <div className="mb-md">
-                                    <div className="text-sm text-secondary mb-xs">Event</div>
+                                    <div className="text-sm text-secondary mb-xs">{t.event}</div>
                                     <div>{getEventName(selectedPayment.eventId)}</div>
                                 </div>
 
                                 <div className="mb-md">
-                                    <div className="text-sm text-secondary mb-xs">Amount</div>
+                                    <div className="text-sm text-secondary mb-xs">{t.amount}</div>
                                     <div className="text-xl font-bold">
                                         {selectedPayment.amount} {selectedPayment.currency}
                                     </div>
                                 </div>
 
                                 <div className="mb-md">
-                                    <div className="text-sm text-secondary mb-xs">Variable Symbol</div>
+                                    <div className="text-sm text-secondary mb-xs">{t.variableSymbol}</div>
                                     <div className="font-mono">{selectedPayment.variableSymbol}</div>
                                 </div>
 
                                 <div className="mb-md">
-                                    <div className="text-sm text-secondary mb-xs">Static Symbol</div>
+                                    <div className="text-sm text-secondary mb-xs">{t.staticSymbolSimple}</div>
                                     <div className="font-mono">{selectedPayment.staticSymbol}</div>
                                 </div>
 
                                 {selectedPayment.message && (
                                     <div className="mb-md">
-                                        <div className="text-sm text-secondary mb-xs">Message</div>
+                                        <div className="text-sm text-secondary mb-xs">{t.message}</div>
                                         <div>{selectedPayment.message}</div>
                                     </div>
                                 )}
 
                                 <div className="mb-lg">
-                                    <div className="text-sm text-secondary mb-xs">SPAYD String</div>
+                                    <div className="text-sm text-secondary mb-xs">{t.spaydString}</div>
                                     <div className="spayd-string" style={{ position: 'relative' }}>
                                         <button
                                             className="copy-button"
                                             onClick={() => copyToClipboard(selectedPayment.spaydString)}
                                         >
-                                            Copy
+                                            {t.copyToClipboard}
                                         </button>
                                         {selectedPayment.spaydString}
                                     </div>
@@ -238,14 +240,14 @@ export function PaymentHistory() {
                                         link.click();
                                     }}
                                 >
-                                    💾 Download QR Code
+                                    {t.downloadQrCode}
                                 </button>
                             </div>
                         ) : (
                             <div className="empty-state">
                                 <div className="empty-state-icon">👈</div>
-                                <h3>Select a payment</h3>
-                                <p>Click "View" on a payment to see details</p>
+                                <h3>{t.selectPayment}</h3>
+                                <p>{t.selectPaymentMessage}</p>
                             </div>
                         )}
                     </div>
