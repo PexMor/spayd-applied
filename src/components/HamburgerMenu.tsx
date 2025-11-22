@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
 import { useI18n } from '../I18nContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { SettingsDialog } from './SettingsDialog';
 import './HamburgerMenu.css';
 
 interface HamburgerMenuProps {
@@ -11,6 +12,7 @@ interface HamburgerMenuProps {
 export function HamburgerMenu({ activeView, onNavigate }: HamburgerMenuProps) {
     const { t } = useI18n();
     const [isOpen, setIsOpen] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
 
     const menuItems = [
         { id: 'generate', label: t.tabGenerate, icon: '💳' },
@@ -57,6 +59,18 @@ export function HamburgerMenu({ activeView, onNavigate }: HamburgerMenuProps) {
                             </button>
                         </li>
                     ))}
+                    <li>
+                        <button
+                            className="menu-item"
+                            onClick={() => {
+                                setShowSettings(true);
+                                setIsOpen(false);
+                            }}
+                        >
+                            <span className="menu-icon">⚙️</span>
+                            <span className="menu-label">{t.settings}</span>
+                        </button>
+                    </li>
                 </ul>
                 <div className="menu-footer">
                     <LanguageSwitcher />
@@ -75,11 +89,22 @@ export function HamburgerMenu({ activeView, onNavigate }: HamburgerMenuProps) {
                         <span className="menu-label">{item.label}</span>
                     </button>
                 ))}
+                <button
+                    className="desktop-menu-item"
+                    onClick={() => setShowSettings(true)}
+                >
+                    <span className="menu-icon">⚙️</span>
+                    <span className="menu-label">{t.settings}</span>
+                </button>
                 <div className="desktop-menu-separator"></div>
                 <div className="desktop-menu-language">
                     <LanguageSwitcher />
                 </div>
             </nav>
+
+            {showSettings && (
+                <SettingsDialog onClose={() => setShowSettings(false)} />
+            )}
         </>
     );
 }

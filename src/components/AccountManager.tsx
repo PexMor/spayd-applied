@@ -13,7 +13,7 @@ export function AccountManager() {
         name: '',
         iban: '',
         currency: 'CZK',
-        webhookUrl: '',
+
         isDefault: false,
     });
     const [error, setError] = useState('');
@@ -35,7 +35,7 @@ export function AccountManager() {
                 name: account.name,
                 iban: account.iban,
                 currency: account.currency,
-                webhookUrl: account.webhookUrl || '',
+
                 isDefault: account.isDefault,
             });
         } else {
@@ -44,7 +44,7 @@ export function AccountManager() {
                 name: '',
                 iban: '',
                 currency: 'CZK',
-                webhookUrl: '',
+
                 isDefault: accounts.length === 0,
             });
         }
@@ -135,14 +135,7 @@ export function AccountManager() {
                                 <div className="text-sm text-secondary">{t.currency}</div>
                                 <div className="text-sm">{account.currency}</div>
                             </div>
-                            {account.webhookUrl && (
-                                <div className="mb-sm">
-                                    <div className="text-sm text-secondary">{t.webhookUrl}</div>
-                                    <div className="text-sm font-mono" style={{ wordBreak: 'break-all' }}>
-                                        {account.webhookUrl}
-                                    </div>
-                                </div>
-                            )}
+
                             <div className="flex gap-sm mt-md">
                                 <button
                                     className="btn btn-secondary btn-sm"
@@ -218,20 +211,7 @@ export function AccountManager() {
                                 </select>
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label">{t.webhookUrl} ({t.optional})</label>
-                                <input
-                                    type="url"
-                                    value={formData.webhookUrl}
-                                    onInput={(e) =>
-                                        setFormData({ ...formData, webhookUrl: (e.target as HTMLInputElement).value })
-                                    }
-                                    placeholder={t.webhookUrlPlaceholder}
-                                />
-                                <div className="form-help">
-                                    {t.webhookUrlHelp}
-                                </div>
-                            </div>
+
 
                             <div className="form-group">
                                 <label className="flex items-center gap-sm">

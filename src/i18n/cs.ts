@@ -1,4 +1,13 @@
 export const cs = {
+    settings: 'Nastavení',
+    globalSettings: 'Globální nastavení',
+    webhookUrl: 'Webhook URL',
+    webhookUrlPlaceholder: 'https://priklad.cz/webhook',
+    webhookUrlHelp: 'URL kam budou zasílány notifikace o platbách (POST požadavek)',
+    save: 'Uložit',
+    cancel: 'Zrušit',
+    saved: 'Uloženo',
+    failedToSave: 'Nepodařilo se uložit',
   // App Title
   appTitle: 'SPAYD Generátor Plateb',
   appSubtitle: 'Systém pro generování QR kódů plateb s více účty',
@@ -34,9 +43,7 @@ export const cs = {
   ibanPlaceholder: 'CZ6508000000192000145399',
   ibanHelp: 'Zadejte IBAN bez mezer (např. CZ6508000000192000145399)',
   currency: 'Měna',
-  webhookUrl: 'Webhook URL',
-  webhookUrlPlaceholder: 'https://api.example.com/webhook',
-  webhookUrlHelp: 'URL pro zasílání notifikací o platbách (nechte prázdné pro vypnutí synchronizace)',
+
   setAsDefault: 'Nastavit jako výchozí účet',
   noAccountsYet: 'Zatím žádné účty',
   noAccountsMessage: 'Přidejte svůj první bankovní účet pro začátek generování plateb',

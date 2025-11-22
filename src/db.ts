@@ -56,6 +56,7 @@ export interface SyncQueueItem {
 export interface Settings {
   language?: 'cs' | 'en' | 'auto';
   theme?: 'light' | 'dark' | 'auto';
+  webhookUrl?: string;
 }
 
 // Database instance holder
@@ -73,7 +74,7 @@ export async function initDB(): Promise<IDBDatabase> {
   }
 
   const DB_NAME = 'spayd-db';
-  const DB_VERSION = 3; // Incremented to add message field to events
+  const DB_VERSION = 4; // Incremented to move webhook URL to global settings
 
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -89,6 +90,7 @@ export async function initDB(): Promise<IDBDatabase> {
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
+      const transaction = (event.target as IDBOpenDBRequest).transaction;
 
       // Create accounts store
       if (!db.objectStoreNames.contains('accounts')) {
@@ -132,6 +134,24 @@ export async function initDB(): Promise<IDBDatabase> {
       // Create settings store
       if (!db.objectStoreNames.contains('settings')) {
         db.createObjectStore('settings', { keyPath: 'key' });
+      }
+
+      // Migration for version 4: Move webhook URL from accounts to global settings
+      if (event.oldVersion < 4 && transaction) {
+        const accountStore = transaction.objectStore('accounts');
+        const settingsStore = transaction.objectStore('settings');
+        
+        const request = accountStore.getAll();
+        request.onsuccess = () => {
+          const accounts = request.result as Account[];
+          // Find the first account with a webhook URL
+          const accountWithWebhook = accounts.find(a => a.webhookUrl);
+          
+          if (accountWithWebhook && accountWithWebhook.webhookUrl) {
+            console.log('[DB] Migrating webhook URL to global settings:', accountWithWebhook.webhookUrl);
+            settingsStore.put({ key: 'webhookUrl', value: accountWithWebhook.webhookUrl });
+          }
+        };
       }
     };
   });

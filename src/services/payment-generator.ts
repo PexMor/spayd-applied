@@ -7,6 +7,7 @@ import {
   updateEvent,
   addPayment,
   addToSyncQueue,
+  getSetting,
   type Event,
   type Payment,
 } from '../db';
@@ -140,11 +141,12 @@ export async function generatePayment(
     console.log('[PaymentGenerator] Payment stored with ID:', paymentId);
 
     // Queue for backend sync if webhook is configured
-    if (account.webhookUrl) {
-      console.log('[PaymentGenerator] Queuing for sync to webhook:', account.webhookUrl);
+    const webhookUrl = await getSetting<string>('webhookUrl');
+    if (webhookUrl) {
+      console.log('[PaymentGenerator] Queuing for sync to webhook:', webhookUrl);
       await addToSyncQueue({
         paymentId,
-        webhookUrl: account.webhookUrl,
+        webhookUrl,
         payload: {
           paymentId,
           accountId,
