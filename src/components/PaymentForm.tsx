@@ -3,6 +3,8 @@ import { JSX } from 'preact';
 import { getAccounts, getEvents, type Account, type Event } from '../db';
 import { generatePayment } from '../services/payment-generator';
 import { friendlyFormatIBAN } from 'ibantools';
+import { AlertDialog } from './Dialog';
+import './PaymentForm.css';
 
 export function PaymentForm() {
     const [accounts, setAccounts] = useState<Account[]>([]);
@@ -14,7 +16,8 @@ export function PaymentForm() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedPayment, setGeneratedPayment] = useState<any>(null);
     const [error, setError] = useState('');
-    const [usePermanentAmount, setUsePermanentAmount] = useState(false);
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [showAlert, setShowAlert] = useState<string | null>(null);
 
     useEffect(() => {
         loadData();
@@ -37,12 +40,22 @@ export function PaymentForm() {
     const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
     const selectedEvent = events.find((e) => e.id === selectedEventId);
 
+    // Auto-apply event amount and message when event changes
     useEffect(() => {
-        // Auto-fill permanent amount if available and toggle is on
-        if (usePermanentAmount && selectedEvent?.permanentAmount) {
+        if (selectedEvent?.permanentAmount) {
             setAmount(selectedEvent.permanentAmount.toString());
+        } else {
+            // Clear amount if new event doesn't have permanent amount
+            setAmount('');
         }
-    }, [usePermanentAmount, selectedEvent]);
+
+        if (selectedEvent?.message) {
+            setMessage(selectedEvent.message);
+        } else {
+            // Clear message if new event doesn't have message
+            setMessage('');
+        }
+    }, [selectedEvent]);
 
     async function handleGenerate(e: JSX.TargetedEvent<HTMLFormElement, SubmitEvent>) {
         e.preventDefault();
@@ -69,11 +82,7 @@ export function PaymentForm() {
             // Reload data to get updated VS counter
             await loadData();
 
-            // Reset form if not using permanent amount
-            if (!usePermanentAmount) {
-                setAmount('');
-                setMessage('');
-            }
+            // Don't reset - let auto-apply logic handle it when event changes
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to generate payment');
         } finally {
@@ -83,230 +92,229 @@ export function PaymentForm() {
 
     function copyToClipboard(text: string) {
         navigator.clipboard.writeText(text);
-        alert('Copied to clipboard!');
+        setShowAlert('Copied to clipboard!');
     }
 
-    return (
-        <div className="fade-in">
-            <h2 className="mb-lg">Generate Payment</h2>
-
-            {accounts.length === 0 || events.length === 0 ? (
-                <div className="empty-state">
-                    <div className="empty-state-icon">⚠️</div>
-                    <h3>Setup Required</h3>
-                    <p>
-                        Please create at least one account and one event before generating payments.
-                    </p>
+    // Mobile-first: Show QR code full screen after generation
+    if (generatedPayment) {
+        return (
+            <div className="payment-result fade-in">
+                <div className="result-header">
+                    <h2>Payment QR Code</h2>
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setGeneratedPayment(null)}
+                    >
+                        ← Back
+                    </button>
                 </div>
-            ) : (
-                <div className="grid grid-2">
-                    <div>
-                        <form onSubmit={handleGenerate}>
-                            <div className="card mb-lg">
-                                <h3 className="mb-md">Selection</h3>
 
-                                <div className="form-group">
-                                    <label className="form-label">Account</label>
-                                    <select
-                                        value={selectedAccountId || ''}
-                                        onChange={(e) =>
-                                            setSelectedAccountId(
-                                                parseInt((e.target as HTMLSelectElement).value)
-                                            )
-                                        }
-                                        required
-                                    >
-                                        {accounts.map((account) => (
-                                            <option key={account.id} value={account.id}>
-                                                {account.name} - {friendlyFormatIBAN(account.iban)}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                <div className="result-qr">
+                    <img src={generatedPayment.qrCodeDataUrl} alt="Payment QR Code" />
+                </div>
 
-                                <div className="form-group">
-                                    <label className="form-label">Event</label>
-                                    <select
-                                        value={selectedEventId || ''}
-                                        onChange={(e) =>
-                                            setSelectedEventId(
-                                                parseInt((e.target as HTMLSelectElement).value)
-                                            )
-                                        }
-                                        required
-                                    >
-                                        {events.map((event) => (
-                                            <option key={event.id} value={event.id}>
-                                                {event.name} (SS: {event.staticSymbol})
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {selectedAccount && selectedEvent && (
-                                    <div className="p-md" style={{ background: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-md)' }}>
-                                        <div className="text-sm text-secondary mb-xs">Selected Configuration</div>
-                                        <div className="text-sm">
-                                            <strong>IBAN:</strong> {friendlyFormatIBAN(selectedAccount.iban)}
-                                        </div>
-                                        <div className="text-sm">
-                                            <strong>Currency:</strong> {selectedAccount.currency}
-                                        </div>
-                                        <div className="text-sm">
-                                            <strong>SS:</strong> {selectedEvent.staticSymbol}
-                                        </div>
-                                        <div className="text-sm">
-                                            <strong>VS Mode:</strong> {selectedEvent.vsMode}
-                                            {selectedEvent.vsMode === 'counter' && ` (next: ${selectedEvent.vsCounter})`}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="card">
-                                <h3 className="mb-md">Payment Details</h3>
-
-                                {selectedEvent?.permanentAmount && (
-                                    <div className="form-group">
-                                        <label className="flex items-center gap-sm">
-                                            <input
-                                                type="checkbox"
-                                                checked={usePermanentAmount}
-                                                onChange={(e) =>
-                                                    setUsePermanentAmount((e.target as HTMLInputElement).checked)
-                                                }
-                                            />
-                                            <span className="form-label" style={{ marginBottom: 0 }}>
-                                                Use permanent amount ({selectedEvent.permanentAmount}{' '}
-                                                {selectedAccount?.currency || 'CZK'})
-                                            </span>
-                                        </label>
-                                    </div>
-                                )}
-
-                                <div className="form-group">
-                                    <label className="form-label">
-                                        Amount ({selectedAccount?.currency || 'CZK'})
-                                    </label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        value={amount}
-                                        onInput={(e) => setAmount((e.target as HTMLInputElement).value)}
-                                        placeholder="e.g., 450.00"
-                                        required
-                                        disabled={usePermanentAmount}
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label className="form-label">Message (Optional)</label>
-                                    <input
-                                        type="text"
-                                        value={message}
-                                        onInput={(e) => setMessage((e.target as HTMLInputElement).value)}
-                                        placeholder="e.g., Registration fee"
-                                    />
-                                </div>
-
-                                {error && <div className="form-error mb-md">{error}</div>}
-
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary btn-lg"
-                                    disabled={isGenerating}
-                                    style={{ width: '100%' }}
-                                >
-                                    {isGenerating ? (
-                                        <>
-                                            <div className="spinner"></div>
-                                            Generating...
-                                        </>
-                                    ) : usePermanentAmount ? (
-                                        '⚡ Quick Generate'
-                                    ) : (
-                                        'Generate Payment'
-                                    )}
-                                </button>
-                            </div>
-                        </form>
+                <div className="result-details">
+                    <div className="result-amount">
+                        <div className="amount-value">
+                            {generatedPayment.amount} {generatedPayment.currency}
+                        </div>
+                        <div className="amount-label">Amount</div>
                     </div>
 
-                    <div>
-                        {generatedPayment ? (
-                            <div className="card fade-in">
-                                <h3 className="mb-md">Generated Payment</h3>
-
-                                <div className="qr-display mb-lg">
-                                    <img src={generatedPayment.qrCodeDataUrl} alt="Payment QR Code" />
-                                </div>
-
-                                <div className="mb-md">
-                                    <div className="text-sm text-secondary mb-xs">Amount</div>
-                                    <div className="text-xl font-bold">
-                                        {generatedPayment.amount} {generatedPayment.currency}
-                                    </div>
-                                </div>
-
-                                <div className="mb-md">
-                                    <div className="text-sm text-secondary mb-xs">Variable Symbol</div>
-                                    <div className="font-mono">{generatedPayment.variableSymbol}</div>
-                                </div>
-
-                                <div className="mb-md">
-                                    <div className="text-sm text-secondary mb-xs">Static Symbol</div>
-                                    <div className="font-mono">{generatedPayment.staticSymbol}</div>
-                                </div>
-
-                                {generatedPayment.message && (
-                                    <div className="mb-md">
-                                        <div className="text-sm text-secondary mb-xs">Message</div>
-                                        <div>{generatedPayment.message}</div>
-                                    </div>
-                                )}
-
-                                <div className="mb-md">
-                                    <div className="text-sm text-secondary mb-xs">SPAYD String</div>
-                                    <div className="spayd-string" style={{ position: 'relative' }}>
-                                        <button
-                                            className="copy-button"
-                                            onClick={() => copyToClipboard(generatedPayment.spaydString)}
-                                        >
-                                            Copy
-                                        </button>
-                                        {generatedPayment.spaydString}
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-sm">
-                                    <button
-                                        className="btn btn-secondary"
-                                        onClick={() => {
-                                            const link = document.createElement('a');
-                                            link.download = `payment-${generatedPayment.variableSymbol}.png`;
-                                            link.href = generatedPayment.qrCodeDataUrl;
-                                            link.click();
-                                        }}
-                                    >
-                                        💾 Download QR
-                                    </button>
-                                    <button
-                                        className="btn btn-success"
-                                        onClick={() => setGeneratedPayment(null)}
-                                    >
-                                        ✨ Generate Another
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="empty-state">
-                                <div className="empty-state-icon">📱</div>
-                                <h3>No payment generated yet</h3>
-                                <p>Fill in the form and click generate to create a payment QR code</p>
+                    <div className="result-info">
+                        <div className="info-row">
+                            <span className="info-label">Variable Symbol</span>
+                            <span className="info-value font-mono">{generatedPayment.variableSymbol}</span>
+                        </div>
+                        <div className="info-row">
+                            <span className="info-label">Static Symbol</span>
+                            <span className="info-value font-mono">{generatedPayment.staticSymbol}</span>
+                        </div>
+                        {generatedPayment.message && (
+                            <div className="info-row">
+                                <span className="info-label">Message</span>
+                                <span className="info-value">{generatedPayment.message}</span>
                             </div>
                         )}
                     </div>
+
+                    <div className="spayd-string-container">
+                        <div className="text-sm text-secondary mb-xs">SPAYD String</div>
+                        <div className="spayd-string">
+                            <button
+                                className="copy-button"
+                                onClick={() => copyToClipboard(generatedPayment.spaydString)}
+                            >
+                                Copy
+                            </button>
+                            {generatedPayment.spaydString}
+                        </div>
+                    </div>
                 </div>
+
+                <div className="result-actions">
+                    <button
+                        className="btn btn-secondary"
+                        onClick={() => {
+                            const link = document.createElement('a');
+                            link.download = `payment-${generatedPayment.variableSymbol}.png`;
+                            link.href = generatedPayment.qrCodeDataUrl;
+                            link.click();
+                        }}
+                    >
+                        💾 Download
+                    </button>
+                    <button
+                        className="btn btn-primary"
+                        onClick={() => setGeneratedPayment(null)}
+                    >
+                        ✨ Generate Another
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const hasEventAmount = selectedEvent?.permanentAmount !== undefined;
+    const hasEventMessage = selectedEvent?.message !== undefined;
+
+    return (
+        <div className="payment-form fade-in">
+            <form onSubmit={handleGenerate}>
+                {/* Current Selection Summary - Compact */}
+                {selectedAccount && selectedEvent && (
+                    <div className="selection-summary">
+                        <div className="summary-row">
+                            <span className="summary-icon">🏦</span>
+                            <div className="summary-content">
+                                <div className="summary-label">Account</div>
+                                <div className="summary-value">{selectedAccount.name}</div>
+                            </div>
+                        </div>
+                        <div className="summary-row">
+                            <span className="summary-icon">📅</span>
+                            <div className="summary-content">
+                                <div className="summary-label">Event</div>
+                                <div className="summary-value">{selectedEvent.name}</div>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            className="change-selection-btn"
+                            onClick={() => setShowAdvanced(!showAdvanced)}
+                            title="Change account or event"
+                        >
+                            ⚙️
+                        </button>
+                    </div>
+                )}
+
+                {/* Advanced Selection (Collapsible) */}
+                {showAdvanced && (
+                    <div className="advanced-section fade-in">
+                        <div className="form-group">
+                            <label className="form-label">Account</label>
+                            <select
+                                value={selectedAccountId || ''}
+                                onChange={(e) =>
+                                    setSelectedAccountId(
+                                        parseInt((e.target as HTMLSelectElement).value)
+                                    )
+                                }
+                                required
+                            >
+                                {accounts.map((account) => (
+                                    <option key={account.id} value={account.id}>
+                                        {account.name} - {friendlyFormatIBAN(account.iban)}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Event</label>
+                            <select
+                                value={selectedEventId || ''}
+                                onChange={(e) =>
+                                    setSelectedEventId(
+                                        parseInt((e.target as HTMLSelectElement).value)
+                                    )
+                                }
+                                required
+                            >
+                                {events.map((event) => (
+                                    <option key={event.id} value={event.id}>
+                                        {event.name} (SS: {event.staticSymbol})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                )}
+
+                {/* Amount Input - PROMINENT or disabled if from event */}
+                <div className="amount-input-container">
+                    <label className="amount-label">
+                        Amount ({selectedAccount?.currency || 'CZK'})
+                        {hasEventAmount && <span className="fixed-badge">Fixed</span>}
+                    </label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        className="amount-input"
+                        value={amount}
+                        onInput={(e) => setAmount((e.target as HTMLInputElement).value)}
+                        placeholder="0.00"
+                        required
+                        disabled={hasEventAmount}
+                        autoFocus={!hasEventAmount}
+                    />
+                </div>
+
+                {/* Message Input - shown/hidden based on event config */}
+                <div className="message-section">
+                    <div className="form-group">
+                        <label className="form-label">
+                            Message (Optional)
+                            {hasEventMessage && <span className="fixed-badge">Fixed</span>}
+                        </label>
+                        <input
+                            type="text"
+                            value={message}
+                            onInput={(e) => setMessage((e.target as HTMLInputElement).value)}
+                            placeholder="e.g., Registration fee"
+                            disabled={hasEventMessage}
+                        />
+                    </div>
+                </div>
+
+                {error && <div className="form-error mb-md">{error}</div>}
+
+                {/* Generate Button - LARGE */}
+                <button
+                    type="submit"
+                    className="btn btn-primary generate-btn"
+                    disabled={isGenerating}
+                >
+                    {isGenerating ? (
+                        <>
+                            <div className="spinner"></div>
+                            Generating...
+                        </>
+                    ) : (
+                        <>
+                            <span className="btn-icon">📱</span>
+                            Generate QR Code
+                        </>
+                    )}
+                </button>
+            </form>
+
+            {showAlert && (
+                <AlertDialog
+                    message={showAlert}
+                    onClose={() => setShowAlert(null)}
+                />
             )}
         </div>
     );

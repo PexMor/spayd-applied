@@ -5,29 +5,38 @@ import { EventManager } from './components/EventManager';
 import { PaymentForm } from './components/PaymentForm';
 import { PaymentHistory } from './components/PaymentHistory';
 import { SyncQueue } from './components/SyncQueue';
-import { LanguageSwitcher } from './components/LanguageSwitcher';
-import { initDB, initializeWithSampleData } from './db';
+import { HamburgerMenu } from './components/HamburgerMenu';
+import { ConfigWizard } from './components/ConfigWizard';
+import { initDB, getAccounts, getEvents } from './db';
 import { startBackgroundSync } from './services/sync-service';
 import { useI18n } from './I18nContext';
-import { detectBrowserLanguage } from './i18n';
 
-type TabName = 'generate' | 'accounts' | 'events' | 'history' | 'sync';
+type ViewName = 'generate' | 'accounts' | 'events' | 'history' | 'sync';
 
 export function App() {
   const { t } = useI18n();
-  const [activeTab, setActiveTab] = useState<TabName>('generate');
+  const [activeView, setActiveView] = useState<ViewName>('generate');
   const [isInitialized, setIsInitialized] = useState(false);
+  const [needsConfiguration, setNeedsConfiguration] = useState(false);
 
   useEffect(() => {
-    // Initialize database and start background sync
+    // Initialize database and check configuration status
     initDB()
       .then(async () => {
-        // Initialize with sample data if database is empty
-        // Detect locale for sample data
-        const detectedLocale = detectBrowserLanguage();
-        await initializeWithSampleData(detectedLocale);
+        // Check if we need to show the configuration wizard
+        const accounts = await getAccounts();
+        const events = await getEvents();
+
+        if (accounts.length === 0 || events.length === 0) {
+          // No accounts or events - show configuration wizard
+          setNeedsConfiguration(true);
+        } else {
+          // Already configured - proceed normally
+          setNeedsConfiguration(false);
+        }
 
         setIsInitialized(true);
+
         // Start background sync every 30 seconds
         const syncId = startBackgroundSync(30000);
 
@@ -44,13 +53,16 @@ export function App() {
       });
   }, []);
 
-  const tabs = [
-    { id: 'generate', label: t.tabGenerate },
-    { id: 'accounts', label: t.tabAccounts },
-    { id: 'events', label: t.tabEvents },
-    { id: 'history', label: t.tabHistory },
-    { id: 'sync', label: t.tabSync },
-  ] as const;
+  async function handleConfigComplete() {
+    // Configuration wizard completed - check status again
+    const accounts = await getAccounts();
+    const events = await getEvents();
+
+    if (accounts.length > 0 && events.length > 0) {
+      setNeedsConfiguration(false);
+      setActiveView('generate');
+    }
+  }
 
   if (!isInitialized) {
     return (
@@ -63,54 +75,31 @@ export function App() {
     );
   }
 
+  // Show configuration wizard if needed
+  if (needsConfiguration) {
+    return <ConfigWizard onComplete={handleConfigComplete} />;
+  }
+
   return (
-    <div className="container">
-      <header style={{ textAlign: 'center', marginBottom: 'var(--spacing-xl)' }}>
-        <h1 style={{
-          background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-          marginBottom: 'var(--spacing-sm)'
-        }}>
-          {t.appTitle}
-        </h1>
-        <p className="text-secondary">
-          {t.appSubtitle}
-        </p>
-        <div style={{ marginTop: 'var(--spacing-md)' }}>
-          <LanguageSwitcher />
+    <div className="app-container">
+      <header className="app-header">
+        <div className="header-content">
+          <h1 className="app-title">
+            {t.appTitle}
+          </h1>
+          <HamburgerMenu activeView={activeView} onNavigate={(view) => setActiveView(view as ViewName)} />
         </div>
       </header>
 
-      <nav className="tabs">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id as TabName)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
-
-      <main>
-        {activeTab === 'generate' && <PaymentForm />}
-        {activeTab === 'accounts' && <AccountManager />}
-        {activeTab === 'events' && <EventManager />}
-        {activeTab === 'history' && <PaymentHistory />}
-        {activeTab === 'sync' && <SyncQueue />}
+      <main className="app-main">
+        {activeView === 'generate' && <PaymentForm />}
+        {activeView === 'accounts' && <AccountManager />}
+        {activeView === 'events' && <EventManager />}
+        {activeView === 'history' && <PaymentHistory />}
+        {activeView === 'sync' && <SyncQueue />}
       </main>
 
-      <footer style={{
-        textAlign: 'center',
-        marginTop: 'var(--spacing-2xl)',
-        paddingTop: 'var(--spacing-xl)',
-        borderTop: '1px solid var(--color-border-light)',
-        color: 'var(--color-text-tertiary)',
-        fontSize: '0.875rem'
-      }}>
+      <footer className="app-footer">
         <p>{t.footerText}</p>
       </footer>
     </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import { JSX } from 'preact';
 import { getEvents, addEvent, updateEvent, deleteEvent, type Event } from '../db';
+import { ConfirmDialog } from './Dialog';
 
 export function EventManager() {
     const [events, setEvents] = useState<Event[]>([]);
@@ -13,8 +14,10 @@ export function EventManager() {
         vsCounter: 1,
         vsStaticValue: '',
         permanentAmount: '',
+        message: '',
         isDefault: false,
     });
+    const [deleteConfirm, setDeleteConfirm] = useState<{ event: Event } | null>(null);
 
     useEffect(() => {
         loadEvents();
@@ -35,6 +38,7 @@ export function EventManager() {
                 vsCounter: event.vsCounter,
                 vsStaticValue: event.vsStaticValue || '',
                 permanentAmount: event.permanentAmount?.toString() || '',
+                message: event.message || '',
                 isDefault: event.isDefault,
             });
         } else {
@@ -46,6 +50,7 @@ export function EventManager() {
                 vsCounter: 1,
                 vsStaticValue: '',
                 permanentAmount: '',
+                message: '',
                 isDefault: events.length === 0,
             });
         }
@@ -63,6 +68,7 @@ export function EventManager() {
         const eventData = {
             ...formData,
             permanentAmount: formData.permanentAmount ? parseFloat(formData.permanentAmount) : undefined,
+            message: formData.message || undefined,
             updatedAt: Date.now(),
             createdAt: editingEvent?.createdAt || Date.now(),
         };
@@ -77,12 +83,16 @@ export function EventManager() {
         closeForm();
     }
 
-    async function handleDelete(event: Event) {
+    function handleDelete(event: Event) {
         if (!event.id) return;
-        if (confirm(`Are you sure you want to delete event "${event.name}"?`)) {
-            await deleteEvent(event.id);
-            await loadEvents();
-        }
+        setDeleteConfirm({ event });
+    }
+
+    async function confirmDelete() {
+        if (!deleteConfirm?.event.id) return;
+        await deleteEvent(deleteConfirm.event.id);
+        await loadEvents();
+        setDeleteConfirm(null);
     }
 
     return (
@@ -126,6 +136,12 @@ export function EventManager() {
                                 <div className="mb-sm">
                                     <div className="text-sm text-secondary">Permanent Amount</div>
                                     <div className="text-sm font-semibold">{event.permanentAmount} CZK</div>
+                                </div>
+                            )}
+                            {event.message && (
+                                <div className="mb-sm">
+                                    <div className="text-sm text-secondary">Message</div>
+                                    <div className="text-sm">{event.message}</div>
                                 </div>
                             )}
                             <div className="flex gap-sm mt-md">
@@ -255,6 +271,21 @@ export function EventManager() {
                             </div>
 
                             <div className="form-group">
+                                <label className="form-label">Message (Optional)</label>
+                                <textarea
+                                    value={formData.message}
+                                    onInput={(e) =>
+                                        setFormData({ ...formData, message: (e.target as HTMLTextAreaElement).value })
+                                    }
+                                    placeholder="Optional message for all payments"
+                                    rows={2}
+                                />
+                                <div className="form-help">
+                                    This message will be automatically included in all payments for this event
+                                </div>
+                            </div>
+
+                            <div className="form-group">
                                 <label className="flex items-center gap-sm">
                                     <input
                                         type="checkbox"
@@ -280,6 +311,14 @@ export function EventManager() {
                         </form>
                     </div>
                 </div>
+            )}
+
+            {deleteConfirm && (
+                <ConfirmDialog
+                    message={`Are you sure you want to delete event "${deleteConfirm.event.name}"?`}
+                    onConfirm={confirmDelete}
+                    onCancel={() => setDeleteConfirm(null)}
+                />
             )}
         </div>
     );

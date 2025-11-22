@@ -20,6 +20,7 @@ export interface Event {
   vsCounter: number;
   vsStaticValue?: string;
   permanentAmount?: number;
+  message?: string;
   isDefault: boolean;
   createdAt: number;
   updatedAt: number;
@@ -60,6 +61,9 @@ export interface Settings {
 // Database instance holder
 let dbInstance: IDBDatabase | null = null;
 
+import * as sampleDataImport from './data/sample-data.json';
+const sampleData = sampleDataImport as any;
+
 /**
  * Initialize the IndexedDB database with schema
  */
@@ -69,7 +73,7 @@ export async function initDB(): Promise<IDBDatabase> {
   }
 
   const DB_NAME = 'spayd-db';
-  const DB_VERSION = 2; // Incremented to create settings store
+  const DB_VERSION = 3; // Incremented to add message field to events
 
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -481,160 +485,69 @@ export async function getSettings(): Promise<Settings> {
  * Called on app startup to help users get started quickly
  */
 export async function initializeWithSampleData(locale: 'cs' | 'en' = 'en'): Promise<void> {
-  console.log('[DB] Checking if sample data initialization is needed');
-  
-  const accounts = await getAccounts();
-  const events = await getEvents();
-  
-  // Only initialize if database is completely empty
-  if (accounts.length === 0 && events.length === 0) {
-    console.log('[DB] Initializing database with sample data for locale:', locale);
-    
-    const now = Date.now();
-    
-    // Define locale-specific sample data
-    const sampleData = {
-      cs: {
-        accounts: [
-          {
-            name: 'Hlavní Firemní Účet',
-            iban: 'CZ6508000000192000145399',
-            currency: 'CZK',
-            isDefault: true,
-            createdAt: now,
-            updatedAt: now,
-          },
-          {
-            name: 'Příjmy z Workshopů',
-            iban: 'CZ9401000000001234567899',
-            currency: 'CZK',
-            isDefault: false,
-            createdAt: now,
-            updatedAt: now,
-          },
-          {
-            name: 'Mezinárodní Účet',
-            iban: 'SK3112000000198742637541',
-            currency: 'EUR',
-            isDefault: false,
-            createdAt: now,
-            updatedAt: now,
-          },
-        ],
-        events: [
-          {
-            name: 'Workshop 2024',
-            staticSymbol: '543',
-            vsMode: 'counter' as const,
-            vsCounter: 1,
-            permanentAmount: 450,
-            isDefault: true,
-            createdAt: now,
-            updatedAt: now,
-          },
-          {
-            name: 'Registrace na Konferenci',
-            staticSymbol: '789',
-            vsMode: 'time' as const,
-            vsCounter: 1,
-            permanentAmount: 1200,
-            isDefault: false,
-            createdAt: now,
-            updatedAt: now,
-          },
-          {
-            name: 'Měsíční Členství',
-            staticSymbol: '999',
-            vsMode: 'static' as const,
-            vsCounter: 1,
-            vsStaticValue: '202411',
-            permanentAmount: 299,
-            isDefault: false,
-            createdAt: now,
-            updatedAt: now,
-          },
-        ],
-      },
-      en: {
-        accounts: [
-          {
-            name: 'Main Business Account',
-            iban: 'CZ6508000000192000145399',
-            currency: 'CZK',
-            isDefault: true,
-            createdAt: now,
-            updatedAt: now,
-          },
-          {
-            name: 'Workshop Revenue',
-            iban: 'CZ9401000000001234567899',
-            currency: 'CZK',
-            isDefault: false,
-            createdAt: now,
-            updatedAt: now,
-          },
-          {
-            name: 'International Account',
-            iban: 'SK3112000000198742637541',
-            currency: 'EUR',
-            isDefault: false,
-            createdAt: now,
-            updatedAt: now,
-          },
-        ],
-        events: [
-          {
-            name: 'Workshop 2024',
-            staticSymbol: '543',
-            vsMode: 'counter' as const,
-            vsCounter: 1,
-            permanentAmount: 450,
-            isDefault: true,
-            createdAt: now,
-            updatedAt: now,
-          },
-          {
-            name: 'Conference Registration',
-            staticSymbol: '789',
-            vsMode: 'time' as const,
-            vsCounter: 1,
-            permanentAmount: 1200,
-            isDefault: false,
-            createdAt: now,
-            updatedAt: now,
-          },
-          {
-            name: 'Monthly Membership',
-            staticSymbol: '999',
-            vsMode: 'static' as const,
-            vsCounter: 1,
-            vsStaticValue: '202411',
-            permanentAmount: 299,
-            isDefault: false,
-            createdAt: now,
-            updatedAt: now,
-          },
-        ],
-      },
-    };
-    
-    const { accounts: sampleAccounts, events: sampleEvents } = sampleData[locale];
-    
-    // Create sample accounts
-    for (const account of sampleAccounts) {
-      await addAccount(account);
-      console.log('[DB] Created sample account:', account.name);
-    }
-    
-    // Create sample events
-    for (const event of sampleEvents) {
-      await addEvent(event);
-      console.log('[DB] Created sample event:', event.name);
-    }
-    
-    console.log('[DB] Sample data initialization complete');
-  } else {
-    console.log('[DB] Sample data not needed - database already has data');
-  }
-}
+  console.log('[DB] Adding sample data for locale:', locale);
 
+  const now = Date.now();
+  
+  const localeData = sampleData[locale];
+  if (!localeData) {
+    console.error('[DB] Sample data not found for locale:', locale);
+    return;
+  }
+
+  // Get existing accounts and events to check for conflicts
+  const existingAccounts = await getAccounts();
+  const existingEvents = await getEvents();
+
+  let accountsAdded = 0;
+  let accountsSkipped = 0;
+  let eventsAdded = 0;
+  let eventsSkipped = 0;
+
+  // Add sample accounts that don't conflict (by IBAN)
+  for (const accountData of localeData.accounts) {
+    const exists = existingAccounts.some(a => a.iban === accountData.iban);
+    if (!exists) {
+      try {
+        await addAccount({
+          ...accountData,
+          createdAt: now,
+          updatedAt: now,
+        } as Account);
+        accountsAdded++;
+        console.log('[DB] Added sample account:', accountData.name);
+      } catch (err) {
+        console.log('[DB] Failed to add sample account (conflict?):', accountData.name, err);
+        accountsSkipped++;
+      }
+    } else {
+      console.log('[DB] Skipping existing account (IBAN exists):', accountData.name);
+      accountsSkipped++;
+    }
+  }
+
+  // Add sample events that don't conflict (by static symbol)
+  for (const eventData of localeData.events) {
+    const exists = existingEvents.some(e => e.staticSymbol === eventData.staticSymbol);
+    if (!exists) {
+      try {
+        await addEvent({
+          ...eventData,
+          vsCounter: eventData.vsCounter || 1,
+          createdAt: now,
+          updatedAt: now,
+        } as Event);
+        eventsAdded++;
+        console.log('[DB] Added sample event:', eventData.name);
+      } catch (err) {
+        console.log('[DB] Failed to add sample event (conflict?):', eventData.name, err);
+        eventsSkipped++;
+      }
+    } else {
+      console.log('[DB] Skipping existing event (static symbol exists):', eventData.name);
+      eventsSkipped++;
+    }
+  }
+
+  console.log(`[DB] Sample data complete: ${accountsAdded} accounts added (${accountsSkipped} skipped), ${eventsAdded} events added (${eventsSkipped} skipped)`);
+}

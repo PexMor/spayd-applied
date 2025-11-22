@@ -4,11 +4,11 @@ export const cs = {
   appSubtitle: 'Systém pro generování QR kódů plateb s více účty',
   
   // Tabs
-  tabGenerate: '💳 Generovat',
-  tabAccounts: '🏦 Účty',
-  tabEvents: '📅 Události',
-  tabHistory: '📋 Historie',
-  tabSync: '🔄 Synchronizace',
+  tabGenerate: 'Generovat',
+  tabAccounts: 'Účty',
+  tabEvents: 'Události',
+  tabHistory: 'Historie',
+  tabSync: 'Synchronizace',
   
   // Common
   add: 'Přidat',

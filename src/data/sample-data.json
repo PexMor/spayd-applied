@@ -1,0 +1,94 @@
+{
+  "cs": {
+    "accounts": [
+      {
+        "name": "Hlavní Firemní Účet",
+        "iban": "CZ6508000000192000145399",
+        "currency": "CZK",
+        "isDefault": true
+      },
+      {
+        "name": "Příjmy z Workshopů",
+        "iban": "CZ9401000000120320000012",
+        "currency": "CZK",
+        "isDefault": false
+      },
+      {
+        "name": "Mezinárodní Účet",
+        "iban": "SK3112000000198742637541",
+        "currency": "EUR",
+        "isDefault": false
+      }
+    ],
+    "events": [
+      {
+        "name": "Workshop 2024",
+        "staticSymbol": "543",
+        "vsMode": "counter",
+        "permanentAmount": 450,
+        "message": "Registrace na workshop",
+        "isDefault": true
+      },
+      {
+        "name": "Členské Příspěvky",
+        "staticSymbol": "777",
+        "vsMode": "time",
+        "permanentAmount": 300,
+        "isDefault": false
+      },
+      {
+        "name": "Jednorázové Platby",
+        "staticSymbol": "999",
+        "vsMode": "static",
+        "vsStaticValue": "1",
+        "isDefault": false
+      }
+    ]
+  },
+  "en": {
+    "accounts": [
+      {
+        "name": "Main Business Account",
+        "iban": "CZ6508000000192000145399",
+        "currency": "CZK",
+        "isDefault": true
+      },
+      {
+        "name": "Workshop Revenue",
+        "iban": "CZ9401000000120320000012",
+        "currency": "CZK",
+        "isDefault": false
+      },
+      {
+        "name": "International Account",
+        "iban": "SK3112000000198742637541",
+        "currency": "EUR",
+        "isDefault": false
+      }
+    ],
+    "events": [
+      {
+        "name": "Workshop 2024",
+        "staticSymbol": "543",
+        "vsMode": "counter",
+        "permanentAmount": 450,
+        "message": "Workshop registration fee",
+        "isDefault": true
+      },
+      {
+        "name": "Membership Fees",
+        "staticSymbol": "777",
+        "vsMode": "time",
+        "permanentAmount": 300,
+        "isDefault": false
+      },
+      {
+        "name": "One-time Payments",
+        "staticSymbol": "999",
+        "vsMode": "static",
+        "vsStaticValue": "1",
+        "isDefault": false
+      }
+    ]
+  }
+}

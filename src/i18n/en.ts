@@ -6,11 +6,11 @@ export const en: TranslationKeys = {
   appSubtitle: 'Multi-account payment QR code system with automatic symbol generation',
   
   // Tabs
-  tabGenerate: '💳 Generate',
-  tabAccounts: '🏦 Accounts',
-  tabEvents: '📅 Events',
-  tabHistory: '📋 History',
-  tabSync: '🔄 Sync',
+  tabGenerate: 'Generate',
+  tabAccounts: 'Accounts',
+  tabEvents: 'Events',
+  tabHistory: 'History',
+  tabSync: 'Sync',
   
   // Common
   add: 'Add',

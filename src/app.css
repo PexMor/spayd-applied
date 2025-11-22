@@ -1,32 +1,75 @@
-/* Tab Navigation */
-.tabs {
+/* App Container */
+.app-container {
+    min-height: 100vh;
     display: flex;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-xl);
-    border-bottom: 2px solid var(--color-border-light);
-    overflow-x: auto;
+    flex-direction: column;
 }
 
-.tab-button {
-    background: transparent;
-    color: var(--color-text-secondary);
+/* App Header */
+.app-header {
+    background: var(--color-bg-card);
+    border-bottom: 1px solid var(--color-border-light);
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
     padding: var(--spacing-md) var(--spacing-lg);
-    border: none;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    font-weight: 500;
-    white-space: nowrap;
-    transition: all var(--transition-fast);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.tab-button:hover {
-    color: var(--color-text-primary);
+.app-title {
+    font-size: 1.5rem;
+    margin: 0;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+@media (max-width: 767px) {
+    .app-title {
+        font-size: 1.25rem;
+    }
+
+    .header-content {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+}
+
+/* App Main */
+.app-main {
+    flex: 1;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: var(--spacing-xl);
+}
+
+@media (max-width: 767px) {
+    .app-main {
+        padding: var(--spacing-md);
+    }
+}
+
+/* App Footer */
+.app-footer {
+    text-align: center;
+    padding: var(--spacing-xl);
+    border-top: 1px solid var(--color-border-light);
+    color: var(--color-text-tertiary);
+    font-size: 0.875rem;
     background: var(--color-bg-secondary);
 }
 
-.tab-button.active {
-    color: var(--color-primary);
-    border-bottom-color: var(--color-primary);
+.app-footer p {
+    margin: 0;
 }
 
 /* Button Variants */
@@ -368,4 +411,17 @@ input[type="radio"] {
 
 .toggle input:checked+.toggle-slider:before {
     transform: translateX(1.5rem);
+}
+
+/* Utility: Cards */
+.card {
+    background-color: var(--color-bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-base);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-lg);
 }

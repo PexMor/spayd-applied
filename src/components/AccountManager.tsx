@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import { getAccounts, addAccount, updateAccount, deleteAccount, type Account } from '../db';
 import { friendlyFormatIBAN, isValidIBAN } from 'ibantools';
+import { ConfirmDialog } from './Dialog';
 
 export function AccountManager() {
     const [accounts, setAccounts] = useState<Account[]>([]);
@@ -14,6 +15,7 @@ export function AccountManager() {
         isDefault: false,
     });
     const [error, setError] = useState('');
+    const [deleteConfirm, setDeleteConfirm] = useState<{ account: Account } | null>(null);
 
     useEffect(() => {
         loadAccounts();
@@ -84,12 +86,16 @@ export function AccountManager() {
         }
     }
 
-    async function handleDelete(account: Account) {
+    function handleDelete(account: Account) {
         if (!account.id) return;
-        if (confirm(`Are you sure you want to delete account "${account.name}"?`)) {
-            await deleteAccount(account.id);
-            await loadAccounts();
-        }
+        setDeleteConfirm({ account });
+    }
+
+    async function confirmDelete() {
+        if (!deleteConfirm?.account.id) return;
+        await deleteAccount(deleteConfirm.account.id);
+        await loadAccounts();
+        setDeleteConfirm(null);
     }
 
     return (
@@ -253,6 +259,14 @@ export function AccountManager() {
                         </form>
                     </div>
                 </div>
+            )}
+
+            {deleteConfirm && (
+                <ConfirmDialog
+                    message={`Are you sure you want to delete account "${deleteConfirm.account.name}"?`}
+                    onConfirm={confirmDelete}
+                    onCancel={() => setDeleteConfirm(null)}
+                />
             )}
         </div>
     );

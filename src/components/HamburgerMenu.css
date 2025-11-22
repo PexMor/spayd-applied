@@ -1,0 +1,209 @@
+/* Hamburger Icon */
+.hamburger-icon {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 2rem;
+  height: 2rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1001;
+  position: relative;
+}
+
+.hamburger-line {
+  width: 100%;
+  height: 0.2rem;
+  background: var(--color-text-primary);
+  border-radius: var(--radius-sm);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center center;
+  position: relative;
+}
+
+/* Create a proper symmetrical X when open */
+.hamburger-line:first-child.open {
+  transform: translateY(0.6rem) rotate(45deg);
+}
+
+.hamburger-line:nth-child(2).open {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.hamburger-line:last-child.open {
+  transform: translateY(-0.6rem) rotate(-45deg);
+}
+
+/* Show hamburger icon on mobile */
+@media (max-width: 767px) {
+  .hamburger-icon {
+    display: flex;
+  }
+}
+
+/* Menu Overlay */
+.menu-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Slide-in Menu (Mobile) */
+.slide-menu {
+  position: fixed;
+  top: 0;
+  right: -280px;
+  width: 280px;
+  height: 100vh;
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-xl);
+  z-index: 1000;
+  transition: right var(--transition-base);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--spacing-md);
+}
+
+.slide-menu.open {
+  right: 0;
+}
+
+.menu-list {
+  list-style: none;
+  padding: var(--spacing-md) 0;
+  margin: 0;
+  flex: 1;
+}
+
+.menu-list li {
+  margin: 0;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 1rem;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border-left: 3px solid transparent;
+}
+
+.menu-item:hover {
+  background: var(--color-bg-secondary);
+}
+
+.menu-item.active {
+  background: var(--color-bg-secondary);
+  border-left-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.menu-icon {
+  font-size: 1.25rem;
+  width: 1.5rem;
+  text-align: center;
+}
+
+.menu-label {
+  flex: 1;
+  font-weight: 500;
+}
+
+/* Menu Footer (for language switcher on mobile) */
+.menu-footer {
+  padding: var(--spacing-lg);
+  border-top: 1px solid var(--color-border-light);
+  margin-top: auto;
+}
+
+/* Hide the default select option icons that cause duplication */
+.menu-footer select option::before,
+.desktop-menu-language select option::before {
+  display: none !important;
+  content: none !important;
+}
+
+/* Desktop Menu (Horizontal) */
+.desktop-menu {
+  display: none;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) 0;
+  border-bottom: 2px solid var(--color-border-light);
+  margin-bottom: var(--spacing-xl);
+  overflow-x: visible;
+  flex-wrap: nowrap;
+}
+
+.desktop-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.desktop-menu-item:hover {
+  color: var(--color-text-primary);
+  background: var(--color-bg-secondary);
+}
+
+.desktop-menu-item.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.desktop-menu-separator {
+  width: 1px;
+  height: 2rem;
+  background: var(--color-border);
+  margin: 0 var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.desktop-menu-language {
+  margin-left: auto;
+  flex-shrink: 0;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+}
+
+/* Show desktop menu on larger screens */
+@media (min-width: 768px) {
+  .desktop-menu {
+    display: flex;
+  }
+
+  .slide-menu {
+    display: none;
+  }
+
+  .menu-overlay {
+    display: none;
+  }
+}
