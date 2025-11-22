@@ -57,6 +57,7 @@ export interface Settings {
   language?: 'cs' | 'en' | 'auto';
   theme?: 'light' | 'dark' | 'auto';
   webhookUrl?: string;
+  immediateSync?: boolean;
 }
 
 // Database instance holder

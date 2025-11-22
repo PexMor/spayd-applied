@@ -10,6 +10,7 @@ interface SettingsDialogProps {
 export function SettingsDialog({ onClose }: SettingsDialogProps) {
     const { t } = useI18n();
     const [webhookUrl, setWebhookUrl] = useState('');
+    const [immediateSync, setImmediateSync] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
@@ -20,7 +21,9 @@ export function SettingsDialog({ onClose }: SettingsDialogProps) {
     async function loadSettings() {
         try {
             const url = await getSetting<string>('webhookUrl');
+            const immediate = await getSetting<boolean>('immediateSync');
             setWebhookUrl(url || '');
+            setImmediateSync(!!immediate);
         } catch (error) {
             console.error('Failed to load settings:', error);
         } finally {
@@ -34,6 +37,7 @@ export function SettingsDialog({ onClose }: SettingsDialogProps) {
 
         try {
             await setSetting('webhookUrl', webhookUrl);
+            await setSetting('immediateSync', immediateSync);
             setStatus('saved');
             setTimeout(() => {
                 onClose();
@@ -61,6 +65,21 @@ export function SettingsDialog({ onClose }: SettingsDialogProps) {
                         />
                         <div className="form-help">
                             {t.webhookUrlHelp}
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label flex items-center gap-sm cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={immediateSync}
+                                onChange={(e) => setImmediateSync((e.target as HTMLInputElement).checked)}
+                                className="form-checkbox"
+                            />
+                            {t.immediateSync}
+                        </label>
+                        <div className="form-help">
+                            {t.immediateSyncHelp}
                         </div>
                     </div>
 

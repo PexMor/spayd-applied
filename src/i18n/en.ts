@@ -41,6 +41,8 @@ export const en: TranslationKeys = {
   webhookUrl: 'Webhook URL',
   webhookUrlPlaceholder: 'https://example.com/webhook',
   webhookUrlHelp: 'URL where payment notifications will be sent (POST request)',
+  immediateSync: 'Immediate Sync',
+  immediateSyncHelp: 'Send payment notification immediately after generation',
   saved: 'Saved',
   failedToSave: 'Failed to save',
   setAsDefault: 'Set as default account',

@@ -4,8 +4,8 @@ export const cs = {
     webhookUrl: 'Webhook URL',
     webhookUrlPlaceholder: 'https://priklad.cz/webhook',
     webhookUrlHelp: 'URL kam budou zasílány notifikace o platbách (POST požadavek)',
-    save: 'Uložit',
-    cancel: 'Zrušit',
+    immediateSync: 'Okamžitá synchronizace',
+    immediateSyncHelp: 'Odeslat notifikaci o platbě ihned po vygenerování',
     saved: 'Uloženo',
     failedToSave: 'Nepodařilo se uložit',
   // App Title

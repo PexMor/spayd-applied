@@ -11,6 +11,7 @@ import {
   type Event,
   type Payment,
 } from '../db';
+import { processSyncQueue } from './sync-service';
 
 /**
  * Generate Variable Symbol based on event's VS mode
@@ -163,6 +164,16 @@ export async function generatePayment(
         attempts: 0,
         createdAt: Date.now(),
       });
+
+      // Check for immediate sync setting
+      const immediateSync = await getSetting<boolean>('immediateSync');
+      if (immediateSync) {
+        console.log('[PaymentGenerator] Immediate sync enabled, processing queue...');
+        // Process in background, don't await
+        processSyncQueue().catch(err => 
+          console.error('[PaymentGenerator] Error during immediate sync:', err)
+        );
+      }
     }
 
     const finalPayment = {
