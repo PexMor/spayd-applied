@@ -45,3 +45,25 @@ export function AlertDialog({ message, onClose }: AlertDialogProps) {
         </div>
     );
 }
+
+interface ModalProps {
+    title: string;
+    children: import('preact').ComponentChildren;
+    onClose: () => void;
+}
+
+export function Modal({ title, children, onClose }: ModalProps) {
+    return (
+        <div className="dialog-overlay" onClick={onClose}>
+            <div className="dialog-container modal-container" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h3>{title}</h3>
+                    <button className="close-button" onClick={onClose}>
+                        &times;
+                    </button>
+                </div>
+                <div className="modal-content">{children}</div>
+            </div>
+        </div>
+    );
+}

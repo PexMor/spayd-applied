@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'preact/hooks';
+import { Modal } from './Dialog';
 import { useI18n } from '../I18nContext';
 import {
     getPayments,
@@ -122,136 +123,125 @@ export function PaymentHistory() {
                     <p>{t.noPaymentsMessage}</p>
                 </div>
             ) : (
-                <div className="grid grid-2">
-                    <div>
-                        <div className="table-container">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>{t.date}</th>
-                                        <th>{t.account}</th>
-                                        <th>{t.event}</th>
-                                        <th>{t.amount}</th>
-                                        <th>{t.vs}</th>
-                                        <th>{t.actions}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {payments.map((payment) => (
-                                        <tr key={payment.id}>
-                                            <td className="text-sm">{formatDate(payment.createdAt)}</td>
-                                            <td className="text-sm">{getAccountName(payment.accountId)}</td>
-                                            <td className="text-sm">{getEventName(payment.eventId)}</td>
-                                            <td className="font-semibold">
-                                                {payment.amount} {payment.currency}
-                                            </td>
-                                            <td className="font-mono text-sm">{payment.variableSymbol}</td>
-                                            <td>
-                                                <div className="flex gap-xs">
-                                                    <button
-                                                        className="btn btn-secondary btn-sm"
-                                                        onClick={() => setSelectedPayment(payment)}
-                                                    >
-                                                        {t.view}
-                                                    </button>
-                                                    <button
-                                                        className="btn btn-danger btn-sm"
-                                                        onClick={() => handleDelete(payment)}
-                                                    >
-                                                        {t.delete}
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                <div className="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>{t.date}</th>
+                                <th>{t.account}</th>
+                                <th>{t.event}</th>
+                                <th>{t.amount}</th>
+                                <th>{t.vs}</th>
+                                <th>{t.actions}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {payments.map((payment) => (
+                                <tr key={payment.id}>
+                                    <td className="text-sm">{formatDate(payment.createdAt)}</td>
+                                    <td className="text-sm">{getAccountName(payment.accountId)}</td>
+                                    <td className="text-sm">{getEventName(payment.eventId)}</td>
+                                    <td className="font-semibold">
+                                        {payment.amount} {payment.currency}
+                                    </td>
+                                    <td className="font-mono text-sm">{payment.variableSymbol}</td>
+                                    <td>
+                                        <div className="flex gap-xs">
+                                            <button
+                                                className="btn btn-secondary btn-sm"
+                                                onClick={() => setSelectedPayment(payment)}
+                                            >
+                                                {t.view}
+                                            </button>
+                                            <button
+                                                className="btn btn-danger btn-sm"
+                                                onClick={() => handleDelete(payment)}
+                                            >
+                                                {t.delete}
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {selectedPayment && (
+                <Modal
+                    title={t.paymentDetails}
+                    onClose={() => setSelectedPayment(null)}
+                >
+                    <div className="qr-display mb-lg">
+                        <img src={selectedPayment.qrCodeDataUrl} alt="Payment QR Code" />
+                    </div>
+
+                    <div className="mb-md">
+                        <div className="text-sm text-secondary mb-xs">{t.date}</div>
+                        <div>{formatDate(selectedPayment.createdAt)}</div>
+                    </div>
+
+                    <div className="mb-md">
+                        <div className="text-sm text-secondary mb-xs">{t.account}</div>
+                        <div>{getAccountName(selectedPayment.accountId)}</div>
+                    </div>
+
+                    <div className="mb-md">
+                        <div className="text-sm text-secondary mb-xs">{t.event}</div>
+                        <div>{getEventName(selectedPayment.eventId)}</div>
+                    </div>
+
+                    <div className="mb-md">
+                        <div className="text-sm text-secondary mb-xs">{t.amount}</div>
+                        <div className="text-xl font-bold">
+                            {selectedPayment.amount} {selectedPayment.currency}
                         </div>
                     </div>
 
-                    <div>
-                        {selectedPayment ? (
-                            <div className="card fade-in">
-                                <h3 className="mb-md">{t.paymentDetails}</h3>
-
-                                <div className="qr-display mb-lg">
-                                    <img src={selectedPayment.qrCodeDataUrl} alt="Payment QR Code" />
-                                </div>
-
-                                <div className="mb-md">
-                                    <div className="text-sm text-secondary mb-xs">{t.date}</div>
-                                    <div>{formatDate(selectedPayment.createdAt)}</div>
-                                </div>
-
-                                <div className="mb-md">
-                                    <div className="text-sm text-secondary mb-xs">{t.account}</div>
-                                    <div>{getAccountName(selectedPayment.accountId)}</div>
-                                </div>
-
-                                <div className="mb-md">
-                                    <div className="text-sm text-secondary mb-xs">{t.event}</div>
-                                    <div>{getEventName(selectedPayment.eventId)}</div>
-                                </div>
-
-                                <div className="mb-md">
-                                    <div className="text-sm text-secondary mb-xs">{t.amount}</div>
-                                    <div className="text-xl font-bold">
-                                        {selectedPayment.amount} {selectedPayment.currency}
-                                    </div>
-                                </div>
-
-                                <div className="mb-md">
-                                    <div className="text-sm text-secondary mb-xs">{t.variableSymbol}</div>
-                                    <div className="font-mono">{selectedPayment.variableSymbol}</div>
-                                </div>
-
-                                <div className="mb-md">
-                                    <div className="text-sm text-secondary mb-xs">{t.staticSymbolSimple}</div>
-                                    <div className="font-mono">{selectedPayment.staticSymbol}</div>
-                                </div>
-
-                                {selectedPayment.message && (
-                                    <div className="mb-md">
-                                        <div className="text-sm text-secondary mb-xs">{t.message}</div>
-                                        <div>{selectedPayment.message}</div>
-                                    </div>
-                                )}
-
-                                <div className="mb-lg">
-                                    <div className="text-sm text-secondary mb-xs">{t.spaydString}</div>
-                                    <div className="spayd-string" style={{ position: 'relative' }}>
-                                        <button
-                                            className="copy-button"
-                                            onClick={() => copyToClipboard(selectedPayment.spaydString)}
-                                        >
-                                            {t.copyToClipboard}
-                                        </button>
-                                        {selectedPayment.spaydString}
-                                    </div>
-                                </div>
-
-                                <button
-                                    className="btn btn-secondary"
-                                    style={{ width: '100%' }}
-                                    onClick={() => {
-                                        const link = document.createElement('a');
-                                        link.download = `payment-${selectedPayment.variableSymbol}.png`;
-                                        link.href = selectedPayment.qrCodeDataUrl;
-                                        link.click();
-                                    }}
-                                >
-                                    {t.downloadQrCode}
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="empty-state">
-                                <div className="empty-state-icon">👈</div>
-                                <h3>{t.selectPayment}</h3>
-                                <p>{t.selectPaymentMessage}</p>
-                            </div>
-                        )}
+                    <div className="mb-md">
+                        <div className="text-sm text-secondary mb-xs">{t.variableSymbol}</div>
+                        <div className="font-mono">{selectedPayment.variableSymbol}</div>
                     </div>
-                </div>
+
+                    <div className="mb-md">
+                        <div className="text-sm text-secondary mb-xs">{t.staticSymbolSimple}</div>
+                        <div className="font-mono">{selectedPayment.staticSymbol}</div>
+                    </div>
+
+                    {selectedPayment.message && (
+                        <div className="mb-md">
+                            <div className="text-sm text-secondary mb-xs">{t.message}</div>
+                            <div>{selectedPayment.message}</div>
+                        </div>
+                    )}
+
+                    <div className="mb-lg">
+                        <div className="text-sm text-secondary mb-xs">{t.spaydString}</div>
+                        <div className="spayd-string" style={{ position: 'relative' }}>
+                            <button
+                                className="copy-button"
+                                onClick={() => copyToClipboard(selectedPayment.spaydString)}
+                            >
+                                {t.copyToClipboard}
+                            </button>
+                            {selectedPayment.spaydString}
+                        </div>
+                    </div>
+
+                    <button
+                        className="btn btn-secondary"
+                        style={{ width: '100%' }}
+                        onClick={() => {
+                            const link = document.createElement('a');
+                            link.download = `payment-${selectedPayment.variableSymbol}.png`;
+                            link.href = selectedPayment.qrCodeDataUrl;
+                            link.click();
+                        }}
+                    >
+                        {t.downloadQrCode}
+                    </button>
+                </Modal>
             )}
         </div>
     );

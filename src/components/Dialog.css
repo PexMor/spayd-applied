@@ -50,6 +50,48 @@
     margin-bottom: var(--spacing-md);
 }
 
+.modal-container {
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+}
+
+.modal-header h3 {
+    margin: 0;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 0;
+    line-height: 1;
+}
+
+.close-button:hover {
+    color: var(--text-primary);
+}
+
+.modal-content {
+    padding: var(--spacing-md);
+    overflow-y: auto;
+}
+
 .dialog-icon.warning {
     filter: drop-shadow(0 2px 8px rgba(255, 165, 0, 0.3));
 }
