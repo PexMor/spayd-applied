@@ -48,34 +48,34 @@ This project is built with [Vite](https://vitejs.dev/) and [Preact](https://prea
 ### Main Screen (Generate)
 The core interface for generating QR codes. Select an account, an event, enter the amount and an optional message. The Variable Symbol (VS) is often automatically generated or can be manually input.
 
-![Main screen](imgs/generate.png)
+<a href="imgs/generate.png"><img src="imgs/generate.png" alt="Main screen" height="400"/></a>
 
 #### QR Display
 Once the form is submitted, the generated QR code is displayed, ready to be scanned by a mobile banking app.
 
-![QR displayed](imgs/qr-spayd.png)
+<a href="imgs/qr-spayd.png"><img src="imgs/qr-spayd.png" alt="QR displayed" height="400"/></a>
 
 ### Accounts Management
 Manage your bank accounts here. You can add new accounts with their IBANs and assign them friendly names. These accounts populate the dropdown in the Main Screen.
 
-![Accounts](imgs/accounts.png)
+<a href="imgs/accounts.png"><img src="imgs/accounts.png" alt="Accounts" height="400"/></a>
 
 ### Events Management
 Define recurring or common payment types (Events). Each event can have a default amount and is linked to a specific bank account.
 
-![Events](imgs/events.png)
+<a href="imgs/events.png"><img src="imgs/events.png" alt="Events" height="400"/></a>
 
 ### Payment History
 View a log of all previously generated QR payments. This helps in tracking what you've requested or paid.
 
-![History](imgs/history.png)
+<a href="imgs/history.png"><img src="imgs/history.png" alt="History" height="400"/></a>
 
 ### Sync Queue
 Monitor the status of payments being synced to the backend. Useful if you are using the webhook integration.
 
-![Sync queue](imgs/sync-queue.png)
+<a href="imgs/sync-queue.png"><img src="imgs/sync-queue.png" alt="Sync queue" height="400"/></a>
 
 ### Global Configuration
 Configure global settings for the application, such as the Webhook URL used for syncing payment data.
 
-![Global config](imgs/global-config.png)
+<a href="imgs/global-config.png"><img src="imgs/global-config.png" alt="Global config" height="400"/></a>
