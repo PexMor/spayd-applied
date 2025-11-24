@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
   /* Modern Color Palette */
   --color-primary: hsl(240, 100%, 60%);
@@ -408,6 +410,3 @@ textarea:focus {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-tertiary);
 }
-
-/* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
