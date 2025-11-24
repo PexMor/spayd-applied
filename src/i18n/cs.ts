@@ -213,6 +213,116 @@ export const cs = {
   queueItemsCount: 'Položky Fronty',
   resetAllFlagsConfirm: 'Resetovat všechny příznaky synchronizace? Toto označí všechny položky jako čekající.',
   webhookUrl2: 'Webhook URL',
+
+  // Batch App
+  batchTitle: 'Hromadný SPAYD Generátor',
+  batchSubtitle: 'Generujte hromadné platební QR kódy a e-maily během několika minut.',
+  
+  // Batch Steps
+  stepAccounts: 'Účty',
+  stepEvents: 'Události',
+  stepPeople: 'Data Lidí',
+  stepPreview: 'Náhled & Export',
+  
+  // Batch Accounts
+  import: '📥 Importovat',
+  export: '📤 Exportovat',
+  newAccount: '+ Nový Účet',
+  noAccountsCreated: 'Zatím nebyly vytvořeny žádné účty.',
+  createOne: 'Vytvořit jeden',
+  random: '🎲 Náhodný',
+  saveAccount: 'Uložit Účet',
+  selectAccount: 'Vybrat Účet',
+  importedAccountsSuccess: 'Úspěšně importováno {count} účtů!',
+  
+  // Batch Events
+  newEvent: '+ Nová Událost',
+  noEventsCreated: 'Zatím nebyly vytvořeny žádné události.',
+  saveEvent: 'Uložit Událost',
+  selectEvent: 'Vybrat Událost',
+  importedEventsSuccess: 'Úspěšně importováno {count} událostí!',
+  description: 'Popis',
+  descriptionPlaceholder: 'např. Letní Tábor 2024',
+  paymentSplits: 'Rozdělení Plateb (1-3)',
+  addSplit: '+ Přidat Rozdělení',
+  split: 'Rozdělení',
+  remove: '× Odstranit',
+  dueDate: 'Datum Splatnosti (volitelné)',
+  vsPrefix: 'VS Prefix (volitelné)',
+  vsPrefixPlaceholder: 'např. 2024',
+  max10Digits: 'Max 10 číslic celkem',
+  ssOptional: 'SS (volitelné)',
+  ssPlaceholder: '1-10 číslic',
+  ssHelp: 'Specifický symbol, 1-10 číslic',
+  ksOptional: 'KS (volitelné)',
+  ksPlaceholder: '4 číslice',
+  ksHelp: 'Konstantní symbol, přesně 4 číslice',
+  emailTemplate: 'Šablona E-mailu',
+  emailTemplatePlaceholder: 'Použijte {{FirstName}}, {{SecondName}}, {{Email}}, atd.',
+  emailTemplateHelp: 'Použijte zástupné znaky jako {{ FirstName }}, {{ SecondName }}, atd.',
+  defaultEmailTemplate: 'Dobrý den {{FirstName}} {{SecondName}},\n\nNíže naleznete platební údaje.\n\nS pozdravem',
+  total: 'Celkem',
+  payments: 'plateb',
+  
+  // Batch People Data
+  loadDemoData: 'Načíst Demo Data',
+  uploadExcelCsv: 'Nahrát Excel/CSV',
+  importJson: 'Importovat JSON',
+  orPasteData: 'NEBO VLOŽTE DATA',
+  loadPastedData: 'Načíst Vložená Data',
+  clearAll: 'Vymazat Vše',
+  importMore: 'Importovat Více',
+  recipientsLoaded: 'příjemců načteno',
+  addRow: '+ Přidat Řádek',
+  importedRecipientsSuccess: 'Úspěšně importováno {count} příjemců!',
+  dataIsEmpty: 'Data jsou prázdná',
+  failedToParseFile: 'Nepodařilo se zpracovat soubor',
+  failedToParsePastedData: 'Nepodařilo se zpracovat vložená data',
+  clearAllConfirm: 'Opravdu chcete vymazat všechna data?',
+  
+  // Batch Preview
+  downloadZip: 'Stáhnout ZIP',
+  generatingZip: 'Generování...',
+  previewFor: 'Náhled:',
+  pleaseSelectAccountFirst: 'Prosím vyberte nejprve účet (Krok 1: Účty)',
+  pleaseSelectEventFirst: 'Prosím vyberte nejprve událost (Krok 2: Události)',
+  eventHasNoSplits: 'Událost nemá nakonfigurované žádné rozdělení plateb',
+  invalidIbanFormat: 'Neplatný formát IBAN. Zkontrolujte prosím nastavení účtu.',
+  errorGeneratingPreview: 'Chyba při generování náhledu',
+  uploadDataToSeePreview: 'Nahrajte data pro zobrazení náhledu',
+  failedToGenerateZip: 'Nepodařilo se vygenerovat ZIP',
+
+  // Manual Payment Entry
+  addManualPayment: '+ Přidat Jednu Platbu Ručně',
+  manualPaymentTitle: 'Přidat Ruční Platbu',
+  addPayment: 'Přidat Platbu',
+  
+  // Data Upload
+  dataEmpty: 'Data jsou prázdná',
+  parseError: 'Nepodařilo se zpracovat soubor',
+  uploadPrompt: 'Klikněte pro nahrání CSV nebo Excel souboru',
+  supportedFormats: '.xlsx, .xls, .csv podporovány',
+  or: 'NEBO',
+  pasteData: 'Vložit Data (Excel/TSV)',
+  loadPasted: 'Načíst Vložená Data',
+  loadDemo: 'Načíst Demo Data',
+  
+  // People Data Manager
+  placeholderTsv: 'Částka\tVS\tEmail\tJméno\n100\t123\tjan@novak.cz\tJan',
+  
+  // Email Preview
+  paymentDescriptionFallback: 'Platba',
+  recipientFallback: 'prijemce@priklad.cz',
+  
+  // Email Template
+  emailPaymentDetails: 'Detaily Platby',
+  emailPaymentXofY: 'Platba {current} z {total}',
+  emailScanToPay: 'Naskenujte pro platbu',
+  emailScanToPayX: 'Naskenujte pro platbu {current}',
+  emailGeneratedBy: 'Vygenerováno pomocí SPAYD Applied',
+  emailDueDate: 'Datum Splatnosti',
+  emailConstantSymbol: 'Konstantní Symbol',
+  emailSpecificSymbol: 'Specifický Symbol',
 };
 
 export type TranslationKeys = typeof cs;

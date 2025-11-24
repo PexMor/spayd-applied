@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks';
+import { useI18n } from '../../I18nContext';
 import * as XLSX from 'xlsx';
 import { BatchData } from '../BatchApp';
 
@@ -7,13 +8,14 @@ interface DataUploadProps {
 }
 
 export function DataUpload({ onDataLoaded }: DataUploadProps) {
+    const { t } = useI18n();
     const [fileName, setFileName] = useState<string>('');
     const [error, setError] = useState<string>('');
     const [tsvData, setTsvData] = useState<string>('');
 
     const processData = (data: any[]) => {
         if (data.length === 0) {
-            setError('Data is empty');
+            setError(t.dataEmpty);
             return;
         }
 
@@ -48,7 +50,7 @@ export function DataUpload({ onDataLoaded }: DataUploadProps) {
                 processData(data);
             } catch (err) {
                 console.error(err);
-                setError('Failed to parse file');
+                setError(t.parseError);
             }
         };
         reader.readAsBinaryString(file);
@@ -62,10 +64,10 @@ export function DataUpload({ onDataLoaded }: DataUploadProps) {
             const ws = wb.Sheets[wsname];
             const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
             processData(data);
-            setFileName('Pasted Data');
+            setFileName(t.loadPasted);
         } catch (err) {
             console.error(err);
-            setError('Failed to parse pasted data');
+            setError(t.parseError);
         }
     };
 
@@ -77,7 +79,7 @@ export function DataUpload({ onDataLoaded }: DataUploadProps) {
             ['1500.00', '345678', 'bob@example.com', 'Bob'],
         ];
         processData([demoHeaders, ...demoRows]);
-        setFileName('Demo Data');
+        setFileName(t.loadDemo);
     };
 
     return (
@@ -96,10 +98,10 @@ export function DataUpload({ onDataLoaded }: DataUploadProps) {
                 >
                     <span className="text-4xl mb-2">📄</span>
                     <span className="text-sm font-medium text-gray-700">
-                        {fileName || 'Click to upload CSV or Excel file'}
+                        {fileName || t.uploadPrompt}
                     </span>
                     <span className="text-xs text-gray-500 mt-1">
-                        .xlsx, .xls, .csv supported
+                        {t.supportedFormats}
                     </span>
                 </label>
             </div>
@@ -109,17 +111,17 @@ export function DataUpload({ onDataLoaded }: DataUploadProps) {
                     <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center">
-                    <span className="bg-white px-2 text-sm text-gray-500">OR</span>
+                    <span className="bg-white px-2 text-sm text-gray-500">{t.or}</span>
                 </div>
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Paste Data (Excel/TSV)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t.pasteData}</label>
                 <textarea
                     value={tsvData}
                     onInput={(e) => setTsvData((e.target as HTMLTextAreaElement).value)}
                     className="w-full h-32 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2 font-mono text-xs"
-                    placeholder={`Amount\tVS\tEmail\tFirstName\n100\t123\tjohn@doe.com\tJohn`}
+                    placeholder={t.placeholderTsv}
                 />
                 <div className="flex gap-2 mt-2">
                     <button
@@ -127,13 +129,13 @@ export function DataUpload({ onDataLoaded }: DataUploadProps) {
                         disabled={!tsvData.trim()}
                         className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50 text-sm"
                     >
-                        Load Pasted Data
+                        {t.loadPasted}
                     </button>
                     <button
                         onClick={loadDemoData}
                         className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm ml-auto"
                     >
-                        Load Demo Data
+                        {t.loadDemo}
                     </button>
                 </div>
             </div>

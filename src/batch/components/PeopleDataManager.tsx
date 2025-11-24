@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks';
+import { useI18n } from '../../I18nContext';
 import * as XLSX from 'xlsx';
 import { BatchData } from '../BatchApp';
 
@@ -8,6 +9,7 @@ interface PeopleDataManagerProps {
 }
 
 export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps) {
+    const { t } = useI18n();
     const [isUploadOpen, setIsUploadOpen] = useState(!data);
     const [error, setError] = useState<string>('');
     const [tsvData, setTsvData] = useState<string>('');
@@ -17,7 +19,7 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
 
     const processData = (newData: any[]) => {
         if (newData.length === 0) {
-            setError('Data is empty');
+            setError(t.dataIsEmpty);
             return;
         }
 
@@ -51,7 +53,7 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
                 processData(parsedData);
             } catch (err) {
                 console.error(err);
-                setError('Failed to parse file');
+                setError(t.failedToParseFile);
             }
         };
         reader.readAsBinaryString(file);
@@ -67,7 +69,7 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
             processData(parsedData);
         } catch (err) {
             console.error(err);
-            setError('Failed to parse pasted data');
+            setError(t.failedToParsePastedData);
         }
     };
 
@@ -99,7 +101,7 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
     };
 
     const clearData = () => {
-        if (confirm('Are you sure you want to clear all data?')) {
+        if (confirm(t.clearAllConfirm)) {
             onDataChange(null);
             setIsUploadOpen(true);
         }
@@ -128,12 +130,12 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
                 if (importedData && Array.isArray(importedData.headers) && Array.isArray(importedData.rows)) {
                     onDataChange(importedData);
                     setIsUploadOpen(false);
-                    alert(`Imported ${importedData.rows.length} recipients successfully!`);
+                    alert(t.importedRecipientsSuccess.replace('{count}', importedData.rows.length.toString()));
                 } else {
-                    alert('Invalid file format');
+                    alert(t.error);
                 }
             } catch (error) {
-                alert('Failed to parse JSON file');
+                alert(t.error);
                 console.error(error);
             }
         };
@@ -149,19 +151,19 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
                         className="flex-1 py-8 border-2 border-dashed border-orange-300 bg-orange-50 rounded-lg text-orange-700 hover:bg-orange-100 hover:border-orange-400 transition-colors flex flex-col items-center justify-center gap-2"
                     >
                         <span className="text-2xl">🎲</span>
-                        <span className="font-medium">Load Demo Data</span>
+                        <span className="font-medium">{t.loadDemoData}</span>
                     </button>
 
                     <label className="flex-1 py-8 border-2 border-dashed border-orange-300 bg-orange-50 rounded-lg text-orange-700 hover:bg-orange-100 hover:border-orange-400 transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer">
                         <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} className="hidden" />
                         <span className="text-2xl">📂</span>
-                        <span className="font-medium">Upload Excel/CSV</span>
+                        <span className="font-medium">{t.uploadExcelCsv}</span>
                     </label>
 
                     <label className="flex-1 py-8 border-2 border-dashed border-orange-300 bg-orange-50 rounded-lg text-orange-700 hover:bg-orange-100 hover:border-orange-400 transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer">
                         <input type="file" accept=".json" onChange={handleImportJson} className="hidden" />
                         <span className="text-2xl">📥</span>
-                        <span className="font-medium">Import JSON</span>
+                        <span className="font-medium">{t.importJson}</span>
                     </label>
                 </div>
 
@@ -170,7 +172,7 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
                         <div className="w-full border-t border-orange-200" />
                     </div>
                     <div className="relative flex justify-center">
-                        <span className="bg-white px-2 text-sm text-orange-400">OR PASTE DATA</span>
+                        <span className="bg-white px-2 text-sm text-orange-400">{t.orPasteData}</span>
                     </div>
                 </div>
 
@@ -179,7 +181,7 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
                         value={tsvData}
                         onInput={(e) => setTsvData((e.target as HTMLTextAreaElement).value)}
                         className="w-full h-32 rounded-md border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm border p-3 font-mono text-xs bg-orange-50/30 placeholder-orange-300"
-                        placeholder={`Amount\tVS\tEmail\tFirstName\n100\t123\tjohn@doe.com\tJohn`}
+                        placeholder={t.placeholderTsv}
                     />
                     <div className="flex gap-2">
                         <button
@@ -187,14 +189,14 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
                             disabled={!data}
                             className="flex-1 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
                         >
-                            Cancel
+                            {t.cancel}
                         </button>
                         <button
                             onClick={handleTsvPaste}
                             disabled={!tsvData.trim()}
                             className="flex-1 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
                         >
-                            Load Pasted Data
+                            {t.loadPastedData}
                         </button>
                     </div>
                 </div>
@@ -208,26 +210,26 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
         <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <div className="text-sm text-orange-800">
-                    <strong>{data.rows.length}</strong> recipients loaded
+                    <strong>{data.rows.length}</strong> {t.recipientsLoaded}
                 </div>
                 <div className="flex gap-2">
                     <button
                         onClick={handleExport}
                         className="text-xs px-3 py-1.5 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors"
                     >
-                        📤 Export
+                        {t.export}
                     </button>
                     <button
                         onClick={() => setIsUploadOpen(true)}
                         className="text-xs px-3 py-1.5 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors"
                     >
-                        Import More
+                        {t.importMore}
                     </button>
                     <button
                         onClick={clearData}
                         className="text-xs px-3 py-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
                     >
-                        Clear All
+                        {t.clearAll}
                     </button>
                 </div>
             </div>
@@ -261,7 +263,7 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
                                     <button
                                         onClick={() => deleteRow(rowIndex)}
                                         className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                                        title="Delete Row"
+                                        title={t.delete}
                                     >
                                         ×
                                     </button>
@@ -276,7 +278,7 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
                 onClick={addRow}
                 className="w-full py-2 border-2 border-dashed border-orange-200 rounded-lg text-orange-400 hover:border-orange-400 hover:text-orange-600 transition-all text-sm font-medium"
             >
-                + Add Row
+                {t.addRow}
             </button>
         </div>
     );

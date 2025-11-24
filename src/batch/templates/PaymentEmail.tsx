@@ -9,28 +9,33 @@ interface PaymentDetail {
     description: string;
     qrCodeDataUrl: string;
     dueDate?: string;  // Optional due date
+    logoUrl?: string;
 }
 
 interface PaymentEmailProps {
     subject: string;
     body: string;
     paymentDetailsList: PaymentDetail[];
+    t: any;
+    locale: string;
 }
 
 export const PaymentEmail = ({
     subject,
     body,
     paymentDetailsList,
+    t,
+    locale,
 }: PaymentEmailProps) => {
     // Format due date for display
     const formatDueDate = (dateStr?: string) => {
         if (!dateStr) return null;
         const date = new Date(dateStr);
-        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        return date.toLocaleDateString(locale === 'cs' ? 'cs-CZ' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     };
 
     return (
-        <html lang="en">
+        <html lang={locale}>
             <head>
                 <meta charSet="UTF-8" />
                 <title>{subject}</title>
@@ -44,13 +49,47 @@ export const PaymentEmail = ({
                     padding: '20px 0 48px',
                     maxWidth: '560px',
                 }}>
-                    <h1 style={{
-                        fontSize: '24px',
-                        fontWeight: 'bold',
-                        margin: '40px 0',
-                        padding: '0',
-                        color: '#333',
-                    }}>{paymentDetailsList[0]?.accountName}</h1>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '40px',
+                        borderBottom: '2px solid #f4f4f4',
+                        paddingBottom: '20px'
+                    }}>
+                        <div style={{
+                            fontSize: '24px',
+                            fontWeight: 'bold',
+                            color: '#333'
+                        }}>
+                            {subject}
+                        </div>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '15px'
+                        }}>
+                            {/* <div style={{
+                                fontSize: '16px',
+                                fontWeight: 'bold',
+                                color: '#555',
+                                textAlign: 'right'
+                            }}>
+                                {paymentDetailsList[0]?.accountName}
+                            </div> */}
+                            {paymentDetailsList[0]?.logoUrl && (
+                                <img
+                                    src={paymentDetailsList[0].logoUrl}
+                                    alt="Logo"
+                                    style={{
+                                        height: '40px',
+                                        width: 'auto',
+                                        objectFit: 'contain'
+                                    }}
+                                />
+                            )}
+                        </div>
+                    </div>
 
                     <div style={{
                         fontSize: '16px',
@@ -78,35 +117,37 @@ export const PaymentEmail = ({
                                     margin: '0 0 16px 0',
                                     color: '#333',
                                 }}>
-                                    Payment {paymentDetailsList.length > 1 ? `${index + 1} of ${paymentDetailsList.length}` : 'Details'}
+                                    {paymentDetailsList.length > 1
+                                        ? t.emailPaymentXofY.replace('{current}', index + 1).replace('{total}', paymentDetailsList.length)
+                                        : t.emailPaymentDetails}
                                 </h2>
 
                                 <p style={{ fontSize: '16px', lineHeight: '26px', color: '#333', margin: '8px 0' }}>
-                                    <strong>Amount:</strong> {paymentDetails.amount} {paymentDetails.currency}
+                                    <strong>{t.amount}:</strong> {paymentDetails.amount} {paymentDetails.currency}
                                 </p>
                                 {paymentDetails.dueDate && (
                                     <p style={{ fontSize: '16px', lineHeight: '26px', color: '#d97706', margin: '8px 0' }}>
-                                        <strong>Due Date:</strong> {formatDueDate(paymentDetails.dueDate)}
+                                        <strong>{t.emailDueDate}:</strong> {formatDueDate(paymentDetails.dueDate)}
                                     </p>
                                 )}
                                 <p style={{ fontSize: '16px', lineHeight: '26px', color: '#333', margin: '8px 0' }}>
-                                    <strong>Account:</strong> {paymentDetails.iban}
+                                    <strong>{t.account}:</strong> {paymentDetails.iban}
                                 </p>
                                 <p style={{ fontSize: '16px', lineHeight: '26px', color: '#333', margin: '8px 0' }}>
-                                    <strong>Variable Symbol:</strong> {paymentDetails.variableSymbol}
+                                    <strong>{t.variableSymbol}:</strong> {paymentDetails.variableSymbol}
                                 </p>
                                 {paymentDetails.constantSymbol && (
                                     <p style={{ fontSize: '16px', lineHeight: '26px', color: '#333', margin: '8px 0' }}>
-                                        <strong>Constant Symbol:</strong> {paymentDetails.constantSymbol}
+                                        <strong>{t.emailConstantSymbol}:</strong> {paymentDetails.constantSymbol}
                                     </p>
                                 )}
                                 {paymentDetails.staticSymbol && (
                                     <p style={{ fontSize: '16px', lineHeight: '26px', color: '#333', margin: '8px 0' }}>
-                                        <strong>Specific Symbol:</strong> {paymentDetails.staticSymbol}
+                                        <strong>{t.emailSpecificSymbol}:</strong> {paymentDetails.staticSymbol}
                                     </p>
                                 )}
                                 <p style={{ fontSize: '16px', lineHeight: '26px', color: '#333', margin: '8px 0' }}>
-                                    <strong>Message:</strong> {paymentDetails.description}
+                                    <strong>{t.message}:</strong> {paymentDetails.description}
                                 </p>
                             </div>
 
@@ -119,7 +160,9 @@ export const PaymentEmail = ({
                                     style={{ margin: '0 auto' }}
                                 />
                                 <p style={{ fontSize: '14px', color: '#666', marginTop: '8px' }}>
-                                    Scan to pay {paymentDetailsList.length > 1 ? `payment ${index + 1}` : ''}
+                                    {paymentDetailsList.length > 1
+                                        ? t.emailScanToPayX.replace('{current}', index + 1)
+                                        : t.emailScanToPay}
                                 </p>
                             </div>
 
@@ -132,7 +175,7 @@ export const PaymentEmail = ({
                     <hr style={{ borderColor: '#e6ebf1', margin: '20px 0' }} />
 
                     <p style={{ color: '#8898aa', fontSize: '12px', lineHeight: '16px' }}>
-                        Generated by SPAYD Applied
+                        {t.emailGeneratedBy}
                     </p>
                 </div>
             </body>

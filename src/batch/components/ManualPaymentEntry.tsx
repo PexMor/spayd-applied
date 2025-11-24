@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks';
+import { useI18n } from '../../I18nContext';
 
 interface ManualPaymentEntryProps {
     onAddPayment: (payment: any) => void;
@@ -6,6 +7,7 @@ interface ManualPaymentEntryProps {
 }
 
 export function ManualPaymentEntry({ onAddPayment, headers }: ManualPaymentEntryProps) {
+    const { t } = useI18n();
     const [isOpen, setIsOpen] = useState(false);
     const [payment, setPayment] = useState<any>({});
 
@@ -25,14 +27,14 @@ export function ManualPaymentEntry({ onAddPayment, headers }: ManualPaymentEntry
                 onClick={() => setIsOpen(true)}
                 className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-600 transition-colors"
             >
-                + Add Single Payment Manually
+                {t.addManualPayment}
             </button>
         );
     }
 
     return (
         <div className="border rounded-lg p-4 bg-gray-50">
-            <h3 className="font-medium mb-3">Add Manual Payment</h3>
+            <h3 className="font-medium mb-3">{t.manualPaymentTitle}</h3>
             <form onSubmit={handleSubmit} className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {fields.map((field) => (
@@ -53,13 +55,13 @@ export function ManualPaymentEntry({ onAddPayment, headers }: ManualPaymentEntry
                         onClick={() => setIsOpen(false)}
                         className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800"
                     >
-                        Cancel
+                        {t.cancel}
                     </button>
                     <button
                         type="submit"
                         className="px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
                     >
-                        Add Payment
+                        {t.addPayment}
                     </button>
                 </div>
             </form>

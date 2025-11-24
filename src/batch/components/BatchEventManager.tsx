@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks';
+import { useI18n } from '../../I18nContext';
 
 export interface PaymentSplit {
     amount: number;
@@ -31,6 +32,7 @@ export function BatchEventManager({
     selectedEventId,
     onSelectEvent,
 }: BatchEventManagerProps) {
+    const { t } = useI18n();
     const [isEditing, setIsEditing] = useState(false);
     const [editEvent, setEditEvent] = useState<EventConfig>({
         id: '',
@@ -39,18 +41,18 @@ export function BatchEventManager({
         ss: '',
         ks: '',
         splits: [{ amount: 100 }],  // Splits inherit from event by default
-        emailTemplate: 'Hello {{FirstName}} {{SecondName}},\n\nPlease find your payment details below.\n\nBest regards',
+        emailTemplate: t.defaultEmailTemplate,
     });
 
     const handleAddEvent = () => {
         const newEvent: EventConfig = {
             id: crypto.randomUUID(),
-            description: 'New Event',
+            description: t.newEvent.replace('+ ', ''),
             vsPrefix: '',
             ss: '',
             ks: '',
             splits: [{ amount: 100 }],
-            emailTemplate: 'Hello {{FirstName}} {{SecondName}},\n\nPlease find your payment details below.\n\nBest regards',
+            emailTemplate: t.defaultEmailTemplate,
         };
         setEditEvent(newEvent);
         setIsEditing(true);
@@ -62,7 +64,7 @@ export function BatchEventManager({
     };
 
     const handleDeleteEvent = (id: string) => {
-        if (confirm('Are you sure you want to delete this event?')) {
+        if (confirm(`${t.deleteEventConfirm}?`)) {
             const newEvents = events.filter((e) => e.id !== id);
             onEventsChange(newEvents);
             if (selectedEventId === id && newEvents.length > 0) {
@@ -75,12 +77,12 @@ export function BatchEventManager({
 
     const handleSave = () => {
         if (!editEvent.description) {
-            alert('Description is required');
+            alert(t.required);
             return;
         }
 
         if (editEvent.splits.length === 0 || editEvent.splits.length > 3) {
-            alert('Must have 1-3 payment splits');
+            alert(t.paymentSplits);
             return;
         }
 
@@ -88,15 +90,15 @@ export function BatchEventManager({
         for (let i = 0; i < editEvent.splits.length; i++) {
             const split = editEvent.splits[i];
             if (!split.amount || split.amount <= 0) {
-                alert(`Split ${i + 1}: Amount must be greater than 0`);
+                alert(`${t.split} ${i + 1}: ${t.invalidAmount}`);
                 return;
             }
             if (split.ks && !/^\d{4}$/.test(split.ks)) {
-                alert(`Split ${i + 1}: KS must be exactly 4 digits or empty`);
+                alert(`${t.split} ${i + 1}: ${t.ksHelp}`);
                 return;
             }
             if (split.ss && !/^\d{1,10}$/.test(split.ss)) {
-                alert(`Split ${i + 1}: SS must be up to 10 digits or empty`);
+                alert(`${t.split} ${i + 1}: ${t.ssHelp}`);
                 return;
             }
         }
@@ -163,12 +165,12 @@ export function BatchEventManager({
                     if (importedEvents.length > 0) {
                         onSelectEvent(importedEvents[0].id);
                     }
-                    alert(`Imported ${importedEvents.length} event(s) successfully!`);
+                    alert(t.importedEventsSuccess.replace('{count}', importedEvents.length.toString()));
                 } else {
-                    alert('Invalid file format');
+                    alert(t.error);
                 }
             } catch (error) {
-                alert('Failed to parse JSON file');
+                alert(t.error);
                 console.error(error);
             }
         };
@@ -179,47 +181,47 @@ export function BatchEventManager({
         return (
             <div className="space-y-4 border p-4 rounded-lg bg-white shadow-sm">
                 <h3 className="text-lg font-medium text-green-900">
-                    {events.find((e) => e.id === editEvent.id) ? 'Edit Event' : 'New Event'}
+                    {events.find((e) => e.id === editEvent.id) ? t.editEvent : t.newEvent.replace('+ ', '')}
                 </h3>
                 <div className="grid grid-cols-1 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-green-800">Description</label>
+                        <label className="block text-sm font-medium text-green-800">{t.description}</label>
                         <input
                             type="text"
                             value={editEvent.description}
                             onInput={(e) => setEditEvent({ ...editEvent, description: (e.target as HTMLInputElement).value })}
                             className="mt-1 block w-full rounded-md border-green-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm border p-2"
-                            placeholder="e.g. Summer Camp 2024"
+                            placeholder={t.descriptionPlaceholder}
                         />
                     </div>
 
                     <div className="space-y-3">
                         <div className="flex justify-between items-center">
-                            <label className="block text-sm font-medium text-green-800">Payment Splits (1-3)</label>
+                            <label className="block text-sm font-medium text-green-800">{t.paymentSplits}</label>
                             <button
                                 onClick={addSplit}
                                 disabled={editEvent.splits.length >= 3}
                                 className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors disabled:opacity-30"
                             >
-                                + Add Split
+                                {t.addSplit}
                             </button>
                         </div>
                         {editEvent.splits.map((split, index) => (
                             <div key={index} className="border border-green-200 rounded p-3 space-y-2 bg-green-50/30">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-xs font-medium text-green-700">Split {index + 1}</span>
+                                    <span className="text-xs font-medium text-green-700">{t.split} {index + 1}</span>
                                     {editEvent.splits.length > 1 && (
                                         <button
                                             onClick={() => removeSplit(index)}
                                             className="text-xs text-red-500 hover:text-red-700"
                                         >
-                                            × Remove
+                                            {t.remove}
                                         </button>
                                     )}
                                 </div>
                                 <div className="grid grid-cols-3 gap-2">
                                     <div>
-                                        <label className="block text-xs text-green-700">Amount (CZK)</label>
+                                        <label className="block text-xs text-green-700">{t.amount} (CZK)</label>
                                         <input
                                             type="number"
                                             value={split.amount}
@@ -228,7 +230,7 @@ export function BatchEventManager({
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs text-green-700">Due Date (optional)</label>
+                                        <label className="block text-xs text-green-700">{t.dueDate}</label>
                                         <input
                                             type="date"
                                             value={split.dueDate || ''}
@@ -237,37 +239,37 @@ export function BatchEventManager({
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs text-green-700">VS Prefix (optional)</label>
+                                        <label className="block text-xs text-green-700">{t.vsPrefix}</label>
                                         <input
                                             type="text"
                                             value={split.vsPrefix || ''}
                                             onInput={(e) => updateSplit(index, 'vsPrefix', (e.target as HTMLInputElement).value)}
                                             className="mt-1 block w-full rounded border-green-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm border p-1.5"
-                                            placeholder="e.g. 2024"
+                                            placeholder={t.vsPrefixPlaceholder}
                                         />
-                                        <p className="text-xs text-gray-500 mt-0.5">Max 10 digits total</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">{t.max10Digits}</p>
                                     </div>
                                     <div>
-                                        <label className="block text-xs text-green-700">SS (optional)</label>
+                                        <label className="block text-xs text-green-700">{t.ssOptional}</label>
                                         <input
                                             type="text"
                                             value={split.ss || ''}
                                             onInput={(e) => updateSplit(index, 'ss', (e.target as HTMLInputElement).value)}
                                             className="mt-1 block w-full rounded border-green-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm border p-1.5"
-                                            placeholder="1-10 digits"
+                                            placeholder={t.ssPlaceholder}
                                         />
-                                        <p className="text-xs text-gray-500 mt-0.5">Specific Symbol, 1-10 digits</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">{t.ssHelp}</p>
                                     </div>
                                     <div>
-                                        <label className="block text-xs text-green-700">KS (optional)</label>
+                                        <label className="block text-xs text-green-700">{t.ksOptional}</label>
                                         <input
                                             type="text"
                                             value={split.ks || ''}
                                             onInput={(e) => updateSplit(index, 'ks', (e.target as HTMLInputElement).value)}
                                             className="mt-1 block w-full rounded border-green-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm border p-1.5"
-                                            placeholder="4 digits"
+                                            placeholder={t.ksPlaceholder}
                                         />
-                                        <p className="text-xs text-gray-500 mt-0.5">Constant Symbol, exactly 4 digits</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">{t.ksHelp}</p>
                                     </div>
                                 </div>
                             </div>
@@ -275,15 +277,15 @@ export function BatchEventManager({
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-green-800">Email Template</label>
+                        <label className="block text-sm font-medium text-green-800">{t.emailTemplate}</label>
                         <textarea
                             value={editEvent.emailTemplate}
                             onInput={(e) => setEditEvent({ ...editEvent, emailTemplate: (e.target as HTMLTextAreaElement).value })}
                             className="mt-1 block w-full rounded-md border-green-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm border p-2 font-mono text-xs"
                             rows={4}
-                            placeholder="Use {{FirstName}}, {{SecondName}}, {{Email}}, etc."
+                            placeholder={t.emailTemplatePlaceholder}
                         />
-                        <p className="mt-1 text-xs text-gray-500">Use placeholders like {'{{'} FirstName {'}}'},  {'{{'} Second Name {'}}'},  etc.</p>
+                        <p className="mt-1 text-xs text-gray-500">{t.emailTemplateHelp}</p>
                     </div>
 
                     <div className="flex gap-2 justify-end pt-2">
@@ -291,13 +293,13 @@ export function BatchEventManager({
                             onClick={() => setIsEditing(false)}
                             className="px-4 py-2 text-gray-600 hover:text-gray-800"
                         >
-                            Cancel
+                            {t.cancel}
                         </button>
                         <button
                             onClick={handleSave}
                             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                         >
-                            Save Event
+                            {t.saveEvent}
                         </button>
                     </div>
                 </div>
@@ -308,10 +310,10 @@ export function BatchEventManager({
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
-                <label className="block text-sm font-medium text-green-900">Select Event</label>
+                <label className="block text-sm font-medium text-green-900">{t.selectEvent}</label>
                 <div className="flex gap-2">
                     <label className="text-sm text-green-700 hover:text-green-900 font-medium bg-green-100 px-3 py-1 rounded-full hover:bg-green-200 transition-colors cursor-pointer">
-                        📥 Import
+                        {t.import}
                         <input
                             type="file"
                             accept=".json"
@@ -324,22 +326,22 @@ export function BatchEventManager({
                         disabled={events.length === 0}
                         className="text-sm text-green-700 hover:text-green-900 font-medium bg-green-100 px-3 py-1 rounded-full hover:bg-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        📤 Export
+                        {t.export}
                     </button>
                     <button
                         onClick={handleAddEvent}
                         className="text-sm text-green-700 hover:text-green-900 font-medium bg-green-100 px-3 py-1 rounded-full hover:bg-green-200 transition-colors"
                     >
-                        + New Event
+                        {t.newEvent}
                     </button>
                 </div>
             </div>
 
             {events.length === 0 ? (
                 <div className="text-center py-6 text-green-600 border-2 border-dashed border-green-200 rounded-lg bg-green-50/50">
-                    No events created yet.
+                    {t.noEventsCreated}
                     <br />
-                    <button onClick={handleAddEvent} className="text-green-700 font-medium hover:underline mt-2">Create one</button>
+                    <button onClick={handleAddEvent} className="text-green-700 font-medium hover:underline mt-2">{t.createOne}</button>
                 </div>
             ) : (
                 <div className="space-y-2">
@@ -355,21 +357,21 @@ export function BatchEventManager({
                             <div>
                                 <div className="font-medium text-gray-900">{event.description}</div>
                                 <div className="text-xs text-gray-500 mt-0.5">
-                                    {event.splits.length} payment{event.splits.length > 1 ? 's' : ''} • Total: {event.splits.reduce((sum, s) => sum + s.amount, 0)} CZK
+                                    {event.splits.length} {t.payments} • {t.total}: {event.splits.reduce((sum, s) => sum + s.amount, 0)} CZK
                                 </div>
                             </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleEditEvent(event); }}
                                     className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-100 rounded"
-                                    title="Edit"
+                                    title={t.edit}
                                 >
                                     ✏️
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleDeleteEvent(event.id); }}
                                     className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
-                                    title="Delete"
+                                    title={t.delete}
                                 >
                                     🗑️
                                 </button>

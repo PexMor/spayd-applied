@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks';
+import { useI18n } from '../../I18nContext';
 import { generateRandomIBAN } from '../utils/iban-generator';
 
 export interface Account {
@@ -6,6 +7,7 @@ export interface Account {
     name: string;
     iban: string;
     currency: string;
+    logoUrl?: string;
 }
 
 interface BatchAccountManagerProps {
@@ -21,6 +23,7 @@ export function BatchAccountManager({
     selectedAccountId,
     onSelectAccount,
 }: BatchAccountManagerProps) {
+    const { t } = useI18n();
     const [isEditing, setIsEditing] = useState(false);
     const [editAccount, setEditAccount] = useState<Account>({
         id: '',
@@ -32,7 +35,7 @@ export function BatchAccountManager({
     const handleAddAccount = () => {
         const newAccount: Account = {
             id: crypto.randomUUID(),
-            name: 'New Account',
+            name: t.newAccount.replace('+ ', ''), // Remove '+ ' prefix for default name
             iban: '',
             currency: 'CZK',
         };
@@ -46,7 +49,7 @@ export function BatchAccountManager({
     };
 
     const handleDeleteAccount = (id: string) => {
-        if (confirm('Are you sure you want to delete this account?')) {
+        if (confirm(`${t.deleteAccountConfirm}?`)) {
             const newAccounts = accounts.filter((a) => a.id !== id);
             onAccountsChange(newAccounts);
             if (selectedAccountId === id && newAccounts.length > 0) {
@@ -59,7 +62,7 @@ export function BatchAccountManager({
 
     const handleSave = () => {
         if (!editAccount.name || !editAccount.iban) {
-            alert('Name and IBAN are required');
+            alert(t.required);
             return;
         }
 
@@ -83,7 +86,7 @@ export function BatchAccountManager({
             setEditAccount({ ...editAccount, iban });
         } catch (e) {
             console.error(e);
-            alert('Failed to generate IBAN');
+            alert(t.error);
         }
     };
 
@@ -111,12 +114,12 @@ export function BatchAccountManager({
                     if (importedAccounts.length > 0) {
                         onSelectAccount(importedAccounts[0].id);
                     }
-                    alert(`Imported ${importedAccounts.length} account(s) successfully!`);
+                    alert(t.importedAccountsSuccess.replace('{count}', importedAccounts.length.toString()));
                 } else {
-                    alert('Invalid file format');
+                    alert(t.error);
                 }
             } catch (error) {
-                alert('Failed to parse JSON file');
+                alert(t.error);
                 console.error(error);
             }
         };
@@ -127,11 +130,11 @@ export function BatchAccountManager({
         return (
             <div className="space-y-4 border p-4 rounded-lg bg-white shadow-sm">
                 <h3 className="text-lg font-medium text-blue-900">
-                    {accounts.find((a) => a.id === editAccount.id) ? 'Edit Account' : 'New Account'}
+                    {accounts.find((a) => a.id === editAccount.id) ? t.editAccount : t.newAccount.replace('+ ', '')}
                 </h3>
                 <div className="grid grid-cols-1 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-blue-800">Account Name</label>
+                        <label className="block text-sm font-medium text-blue-800">{t.accountName}</label>
                         <input
                             type="text"
                             value={editAccount.name}
@@ -140,7 +143,7 @@ export function BatchAccountManager({
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-blue-800">IBAN</label>
+                        <label className="block text-sm font-medium text-blue-800">{t.iban}</label>
                         <div className="flex gap-2">
                             <input
                                 type="text"
@@ -152,12 +155,12 @@ export function BatchAccountManager({
                                 onClick={generateIBAN}
                                 className="mt-1 px-3 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-sm whitespace-nowrap transition-colors"
                             >
-                                🎲 Random
+                                {t.random}
                             </button>
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-blue-800">Currency</label>
+                        <label className="block text-sm font-medium text-blue-800">{t.currency}</label>
                         <select
                             value={editAccount.currency}
                             onChange={(e) => setEditAccount({ ...editAccount, currency: (e.target as HTMLSelectElement).value })}
@@ -168,18 +171,28 @@ export function BatchAccountManager({
                             <option value="USD">USD</option>
                         </select>
                     </div>
+                    <div>
+                        <label className="block text-sm font-medium text-blue-800">Logo URL (Optional)</label>
+                        <input
+                            type="text"
+                            value={editAccount.logoUrl || ''}
+                            onInput={(e) => setEditAccount({ ...editAccount, logoUrl: (e.target as HTMLInputElement).value })}
+                            placeholder="https://example.com/logo.png"
+                            className="mt-1 block w-full rounded-md border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                        />
+                    </div>
                     <div className="flex gap-2 justify-end pt-2">
                         <button
                             onClick={() => setIsEditing(false)}
                             className="px-4 py-2 text-gray-600 hover:text-gray-800"
                         >
-                            Cancel
+                            {t.cancel}
                         </button>
                         <button
                             onClick={handleSave}
                             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                         >
-                            Save Account
+                            {t.saveAccount}
                         </button>
                     </div>
                 </div>
@@ -190,10 +203,10 @@ export function BatchAccountManager({
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
-                <label className="block text-sm font-medium text-blue-900">Select Account</label>
+                <label className="block text-sm font-medium text-blue-900">{t.selectAccount}</label>
                 <div className="flex gap-2">
                     <label className="text-sm text-blue-700 hover:text-blue-900 font-medium bg-blue-100 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors cursor-pointer">
-                        📥 Import
+                        {t.import}
                         <input
                             type="file"
                             accept=".json"
@@ -206,22 +219,22 @@ export function BatchAccountManager({
                         disabled={accounts.length === 0}
                         className="text-sm text-blue-700 hover:text-blue-900 font-medium bg-blue-100 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        📤 Export
+                        {t.export}
                     </button>
                     <button
                         onClick={handleAddAccount}
                         className="text-sm text-blue-700 hover:text-blue-900 font-medium bg-blue-100 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors"
                     >
-                        + New Account
+                        {t.newAccount}
                     </button>
                 </div>
             </div>
 
             {accounts.length === 0 ? (
                 <div className="text-center py-6 text-blue-600 border-2 border-dashed border-blue-200 rounded-lg bg-blue-50/50">
-                    No accounts created yet.
+                    {t.noAccountsCreated}
                     <br />
-                    <button onClick={handleAddAccount} className="text-blue-700 font-medium hover:underline mt-2">Create one</button>
+                    <button onClick={handleAddAccount} className="text-blue-700 font-medium hover:underline mt-2">{t.createOne}</button>
                 </div>
             ) : (
                 <div className="space-y-2">
@@ -242,14 +255,14 @@ export function BatchAccountManager({
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleEditAccount(account); }}
                                     className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-100 rounded"
-                                    title="Edit"
+                                    title={t.edit}
                                 >
                                     ✏️
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleDeleteAccount(account.id); }}
                                     className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
-                                    title="Delete"
+                                    title={t.delete}
                                 >
                                     🗑️
                                 </button>
