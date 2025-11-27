@@ -1,0 +1,31 @@
+services:
+  fiofetch:
+    image: fiofetch:latest
+    container_name: fiofetch
+    ports:
+      - "3000:3000"
+    volumes:
+      - ~/.config/fio_fetch:/root/.config/fio_fetch
+    environment:
+      - FIO_FETCH_TOKEN=${FIO_FETCH_TOKEN:-}
+      - FIO_FETCH_HOST=0.0.0.0
+      - FIO_FETCH_PORT=3000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# To use:
+# 1. Build the image first: ./d10_build.sh
+# 2. Run with: docker-compose up -d
+# 3. View logs: docker-compose logs -f
+# 4. Stop: docker-compose down
+

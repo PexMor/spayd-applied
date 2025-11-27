@@ -23,7 +23,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/core@npm:^7.22.1":
+"@babel/core@npm:^7.22.1, @babel/core@npm:^7.23.0":
   version: 7.28.5
   resolution: "@babel/core@npm:7.28.5"
   dependencies:
@@ -1136,6 +1136,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "fiofetch-webui@workspace:."
   dependencies:
+    "@babel/core": "npm:^7.23.0"
     "@preact/preset-vite": "npm:^2.8.1"
     axios: "npm:^1.6.2"
     immer: "npm:^11.0.0"
