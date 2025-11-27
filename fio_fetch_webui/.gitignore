@@ -7,10 +7,22 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+
+# Build output
 dist
 dist-ssr
 *.local
+
+# Yarn Berry exclusions
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
 
 # Editor directories and files
 .vscode/*
@@ -22,15 +34,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-tmp-*
-tmp/
-
-# Yarn Berry exclusions
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
-
-.playwright-mcp/
