@@ -29,10 +29,8 @@ export const getConfig = async () => {
     return response.data;
 };
 
-export const updateConfig = async (fioToken) => {
-    const response = await api.post('/config', {
-        fio_token: fioToken,
-    });
+export const updateConfig = async (configData) => {
+    const response = await api.post('/config', configData);
     return response.data;
 };
 

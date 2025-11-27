@@ -6,7 +6,9 @@ function ConfigPanel() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [newToken, setNewToken] = useState('');
+    const [newApiUrl, setNewApiUrl] = useState('');
     const [showTokenInput, setShowTokenInput] = useState(false);
+    const [showApiUrlInput, setShowApiUrlInput] = useState(false);
     const [message, setMessage] = useState(null);
 
     useEffect(() => {
@@ -38,13 +40,46 @@ function ConfigPanel() {
             setSaving(true);
             setMessage(null);
 
-            const result = await updateConfig(newToken);
+            const result = await updateConfig({ fio_token: newToken });
 
             setMessage({ type: 'success', text: result.message || 'Configuration updated successfully' });
             setNewToken('');
             setShowTokenInput(false);
 
             // Reload config to show masked token
+            setTimeout(() => {
+                loadConfig();
+            }, 500);
+        } catch (error) {
+            console.error('Failed to update config:', error);
+            setMessage({
+                type: 'danger',
+                text: error.response?.data?.detail || 'Failed to update configuration',
+            });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleUpdateApiUrl = async (e) => {
+        e.preventDefault();
+
+        if (!newApiUrl.trim()) {
+            setMessage({ type: 'warning', text: 'Please enter an API URL' });
+            return;
+        }
+
+        try {
+            setSaving(true);
+            setMessage(null);
+
+            const result = await updateConfig({ fio_api_url: newApiUrl });
+
+            setMessage({ type: 'success', text: result.message || 'Configuration updated successfully' });
+            setNewApiUrl('');
+            setShowApiUrlInput(false);
+
+            // Reload config to show updated URL
             setTimeout(() => {
                 loadConfig();
             }, 500);
@@ -123,6 +158,35 @@ function ConfigPanel() {
                             )}
                         </div>
                     </div>
+
+                    <div>
+                        <div className="text-sm text-secondary mb-xs">Fio API URL</div>
+                        <div className="flex items-center gap-md">
+                            <code
+                                style={{
+                                    background: 'var(--bg-secondary)',
+                                    padding: 'var(--space-sm) var(--space-md)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    fontFamily: 'var(--font-mono)',
+                                    fontSize: '0.875rem',
+                                    flex: 1,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                }}
+                            >
+                                {config?.fio_api_url || 'https://www.fioapi.cz/v1/rest'}
+                            </code>
+                            {!showApiUrlInput && (
+                                <button
+                                    onClick={() => setShowApiUrlInput(true)}
+                                    className="btn-secondary"
+                                    style={{ padding: 'var(--space-xs) var(--space-sm)', fontSize: '0.875rem' }}
+                                >
+                                    Update
+                                </button>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -148,7 +212,7 @@ function ConfigPanel() {
                                     disabled={saving}
                                 />
                                 <p className="text-sm text-tertiary mt-xs">
-                                    You can get your API token from your Fio Bank account settings
+                                    You can get your API token from your Fio Bank account settings. Leave empty to use example data.
                                 </p>
                             </div>
 
@@ -194,6 +258,73 @@ function ConfigPanel() {
                 </div>
             )}
 
+            {/* Update API URL */}
+            {showApiUrlInput && (
+                <div className="card animate-fade-in">
+                    <div className="card-header">
+                        <h3>Update Fio API URL</h3>
+                    </div>
+
+                    <form onSubmit={handleUpdateApiUrl}>
+                        <div className="flex flex-col gap-md">
+                            <div>
+                                <label className="text-sm text-secondary mb-xs" style={{ display: 'block' }}>
+                                    API Base URL
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newApiUrl}
+                                    onInput={(e) => setNewApiUrl(e.target.value)}
+                                    placeholder="https://www.fioapi.cz/v1/rest"
+                                    style={{ width: '100%' }}
+                                    disabled={saving}
+                                />
+                                <p className="text-sm text-tertiary mt-xs">
+                                    Change this to point to your own mock server for testing purposes
+                                </p>
+                            </div>
+
+                            <div className="flex gap-md">
+                                <button type="submit" className="btn-primary" disabled={saving}>
+                                    {saving ? (
+                                        <>
+                                            <div className="spinner" style={{ width: '1rem', height: '1rem', borderWidth: '2px' }}></div>
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>💾</span>
+                                            Save URL
+                                        </>
+                                    )}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowApiUrlInput(false);
+                                        setNewApiUrl('');
+                                        setMessage(null);
+                                    }}
+                                    className="btn-secondary"
+                                    disabled={saving}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+
+                            <div
+                                className="badge badge-info"
+                                style={{ padding: 'var(--space-md)', fontSize: '0.875rem' }}
+                            >
+                                💡 <strong>Tip:</strong> Use this to test against your own mock server. The default URL is{' '}
+                                <code>https://www.fioapi.cz/v1/rest</code>. You will need to restart the server for changes to take effect.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            )}
+
             {/* Help */}
             <div className="card" style={{ background: 'var(--bg-secondary)' }}>
                 <h4 className="mb-md">📖 Configuration Help</h4>
@@ -213,7 +344,8 @@ function ConfigPanel() {
                         <li><code>FIO_FETCH_HOST</code> - Server host</li>
                         <li><code>FIO_FETCH_PORT</code> - Server port</li>
                         <li><code>FIO_FETCH_DB_PATH</code> - Database path</li>
-                        <li><code>FIO_FETCH_TOKEN</code> - Fio API token</li>
+                        <li><code>FIO_FETCH_TOKEN</code> - Fio API token (leave empty for example data)</li>
+                        <li><code>FIO_FETCH_API_URL</code> - Fio API base URL (for testing with mock servers)</li>
                         <li><code>FIO_FETCH_STATIC_DIR</code> - Static files directory</li>
                     </ul>
                 </div>

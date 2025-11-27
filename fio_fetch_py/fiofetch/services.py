@@ -88,7 +88,12 @@ class FetchService:
                     SessionLocal = get_session_local(engine)
                     db = SessionLocal()
                     try:
-                        return fetch_and_save_transactions(config.fio_token, db, progress_callback)
+                        return fetch_and_save_transactions(
+                            config.fio_token, 
+                            db, 
+                            progress_callback,
+                            api_url=config.fio_api_url
+                        )
                     finally:
                         db.close()
 

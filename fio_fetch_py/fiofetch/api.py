@@ -50,7 +50,8 @@ class TransactionOut(BaseModel):
         from_attributes = True
 
 class ConfigUpdate(BaseModel):
-    fio_token: str
+    fio_token: Optional[str] = None
+    fio_api_url: Optional[str] = None
 
 @router.get("/transactions", response_model=List[TransactionOut])
 def list_transactions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
@@ -100,6 +101,7 @@ def get_current_config():
         "port": config.port,
         "db_path": config.db_path,
         "fio_token": masked_token,
+        "fio_api_url": config.fio_api_url,
         "static_dir": config.static_dir
     }
 
@@ -119,8 +121,13 @@ def update_config(config_update: ConfigUpdate):
     if os.path.exists(config_path):
         with open(config_path, 'r') as f:
             current_data = yaml.safe_load(f) or {}
-            
-    current_data['fio_token'] = config_update.fio_token
+    
+    # Only update fields that were provided
+    if config_update.fio_token is not None:
+        current_data['fio_token'] = config_update.fio_token
+    
+    if config_update.fio_api_url is not None:
+        current_data['fio_api_url'] = config_update.fio_api_url
     
     with open(config_path, 'w') as f:
         yaml.dump(current_data, f)

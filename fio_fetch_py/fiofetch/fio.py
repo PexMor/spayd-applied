@@ -1,36 +1,112 @@
 from fiobank import FioBank
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime
+from datetime import datetime, date as date_type
 from .models import Transaction
 import logging
+import json
+import os
 
 logger = logging.getLogger(__name__)
 
-def fetch_and_save_transactions(token: str, session: Session, progress_callback=None):
-    if not token:
-        logger.warning("No Fio token provided. Skipping fetch.")
-        if progress_callback:
-            progress_callback(0, 0, "No token provided")
-        return 0
-
-    if progress_callback:
-        progress_callback(0, 0, "Connecting to Fio bank...")
-
-    client = FioBank(token)
+def load_example_transactions():
+    """Load transactions from the example JSON file."""
+    # Get the path to the examples directory
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    example_file = os.path.join(current_dir, '..', 'examples', 'tr.json')
     
-    try:
-        # We convert to list to know the total count for progress
-        transactions = list(client.last())
-    except Exception as e:
-        logger.error(f"Error fetching transactions from Fio: {e}")
+    with open(example_file, 'r') as f:
+        data = json.load(f)
+    
+    # Parse the Fio API JSON format
+    transactions = []
+    transaction_list = data.get('accountStatement', {}).get('transactionList', {}).get('transaction', [])
+    
+    for tr in transaction_list:
+        # Extract values from the column structure
+        def get_column_value(col_name):
+            col = tr.get(col_name)
+            return col.get('value') if col else None
+        
+        # Convert timestamp to date
+        date_ms = get_column_value('column0')
+        trans_date = datetime.fromtimestamp(date_ms / 1000).date() if date_ms else None
+        
+        transaction_data = {
+            'transaction_id': str(get_column_value('column22')),
+            'date': trans_date,
+            'amount': get_column_value('column1'),
+            'currency': get_column_value('column14'),
+            'account_number': get_column_value('column2'),
+            'account_name': get_column_value('column10'),
+            'bank_code': get_column_value('column3'),
+            'bank_name': get_column_value('column12'),
+            'constant_symbol': get_column_value('column4'),
+            'variable_symbol': get_column_value('column5'),
+            'specific_symbol': get_column_value('column6'),
+            'user_identification': get_column_value('column7'),
+            'recipient_message': get_column_value('column16'),
+            'type': get_column_value('column8'),
+            'executor': get_column_value('column9'),
+            'specification': get_column_value('column18'),
+            'comment': get_column_value('column25'),
+            'bic': get_column_value('column26'),
+            'instruction_id': get_column_value('column17')
+        }
+        transactions.append(transaction_data)
+    
+    return transactions
+
+
+def fetch_and_save_transactions(token: str, session: Session, progress_callback=None, api_url: str = None):
+    if not token:
+        logger.warning("No Fio token provided. Using example data from tr.json.")
         if progress_callback:
-            progress_callback(0, 0, f"Error: {str(e)}")
-        raise e
+            progress_callback(0, 0, "⚠️ No token provided. Loading example data from tr.json...")
+        
+        try:
+            transactions = load_example_transactions()
+        except Exception as e:
+            logger.error(f"Error loading example data: {e}")
+            if progress_callback:
+                progress_callback(0, 0, f"Error loading example data: {str(e)}")
+            raise e
+    else:
+        if progress_callback:
+            if api_url and api_url != 'https://www.fioapi.cz/v1/rest':
+                progress_callback(0, 0, f"Connecting to custom API: {api_url}...")
+            else:
+                progress_callback(0, 0, "Connecting to Fio bank...")
+
+        # Create FioBank client with custom URL if provided
+        try:
+            if api_url:
+                # Try to create with base_url parameter (some versions support this)
+                client = FioBank(token=token, base_url=api_url)
+            else:
+                client = FioBank(token)
+        except TypeError:
+            # If base_url is not supported, fall back to standard initialization
+            logger.warning("FioBank library doesn't support base_url parameter. Using default URL.")
+            if progress_callback:
+                progress_callback(0, 0, "⚠️ Custom API URL not supported by library. Using default...")
+            client = FioBank(token)
+        
+        try:
+            # We convert to list to know the total count for progress
+            transactions = list(client.last())
+        except Exception as e:
+            logger.error(f"Error fetching transactions from Fio: {e}")
+            if progress_callback:
+                progress_callback(0, 0, f"Error: {str(e)}")
+            raise e
 
     total = len(transactions)
     if progress_callback:
-        progress_callback(0, total, f"Fetched {total} transactions. Saving...")
+        if not token:
+            progress_callback(0, total, f"📋 Loaded {total} example transactions. Saving...")
+        else:
+            progress_callback(0, total, f"Fetched {total} transactions. Saving...")
 
     saved_count = 0
     for i, tr_data in enumerate(transactions):
@@ -80,7 +156,10 @@ def fetch_and_save_transactions(token: str, session: Session, progress_callback=
     try:
         session.commit()
         if progress_callback:
-            progress_callback(total, total, f"Done. Saved {saved_count} new transactions.")
+            if not token:
+                progress_callback(total, total, f"✅ Done. Saved {saved_count} new example transactions.")
+            else:
+                progress_callback(total, total, f"Done. Saved {saved_count} new transactions.")
     except IntegrityError:
         session.rollback()
         logger.error("Integrity error during commit.")
