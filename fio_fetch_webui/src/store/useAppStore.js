@@ -78,16 +78,32 @@ const useAppStore = create(
             } else {
                 // Handle fetch progress messages
                 if (data.status) {
-                    addMessage(`📊 ${data.status}`, 'primary');
+                    // Determine message type based on status
+                    let messageType = 'primary';
+                    if (data.status === 'error') {
+                        messageType = 'danger';
+                    } else if (data.status === 'completed') {
+                        messageType = 'success';
+                    } else if (data.status === 'started') {
+                        messageType = 'primary';
+                    }
                     
                     // Stop fetching state when completed or error
                     if (data.status === 'completed' || data.status === 'error') {
                         setFetching(false);
                     }
+                    
+                    // Add the detailed message if present, otherwise add status
+                    if (data.message) {
+                        addMessage(data.message, messageType);
+                    } else {
+                        addMessage(`Status: ${data.status}`, messageType);
+                    }
+                } else if (data.message) {
+                    // Standalone message without status
+                    addMessage(data.message, 'primary');
                 }
-                if (data.message) {
-                    addMessage(data.message, data.type || 'primary');
-                }
+                
                 if (data.progress !== undefined) {
                     addMessage(`Progress: ${data.progress}%`, 'primary');
                 }

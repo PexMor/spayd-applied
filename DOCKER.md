@@ -40,25 +40,25 @@ The Docker setup combines both the Python backend (`fio_fetch_py`) and the React
 
 ```
 ┌─────────────────────────────────────────┐
-│         Docker Container                 │
+│         Docker Container                │
 │  ┌────────────────────────────────────┐ │
 │  │  Preact Web UI (Built with Vite)   │ │
 │  └────────────────────────────────────┘ │
-│                   ↓                      │
+│                   ↓                     │
 │  ┌────────────────────────────────────┐ │
 │  │  FastAPI Backend (Python 3.13)     │ │
 │  │  - REST API (/api/v1/*)            │ │
 │  │  - WebSocket Support               │ │
 │  └────────────────────────────────────┘ │
-│                   ↓                      │
+│                   ↓                     │
 │  ┌────────────────────────────────────┐ │
 │  │  SQLite Database (via volume)      │ │
 │  └────────────────────────────────────┘ │
 └─────────────────────────────────────────┘
               ↕ (Port 3000)
 ┌─────────────────────────────────────────┐
-│         Host Machine                     │
-│  ~/.config/fio_fetch/                    │
+│         Host Machine                    │
+│  ~/.config/fio_fetch/                   │
 │  ├── config.yaml  (Configuration)       │
 │  └── fio.db       (Database)            │
 └─────────────────────────────────────────┘
