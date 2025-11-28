@@ -3,17 +3,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, date as date_type
 from .models import Transaction
+from .utils import mask_token
 import logging
 import json
 import os
 
 logger = logging.getLogger(__name__)
-
-def mask_token_in_string(text: str, token: str) -> str:
-    """Mask token in strings to prevent exposure in logs."""
-    if not token or not text:
-        return text
-    return text.replace(token, '<token>')
 
 def load_example_transactions():
     """Load transactions from the example JSON file."""
@@ -103,7 +98,7 @@ def fetch_and_save_transactions(token: str, session: Session, progress_callback=
             transactions = list(client.last())
         except Exception as e:
             # Mask token in error message before logging
-            error_str = mask_token_in_string(str(e), token)
+            error_str = mask_token(str(e), token)
             logger.error(f"Error fetching transactions from Fio: {error_str}")
             # Don't send progress_callback here - let the exception propagate
             # to services.py where it will be properly formatted and sent via websocket

@@ -34,4 +34,10 @@ export const updateConfig = async (configData) => {
     return response.data;
 };
 
+// Set last date (zarážka)
+export const setLastDate = async (daysBack = null) => {
+    const response = await api.post('/set-last-date', { days_back: daysBack });
+    return response.data;
+};
+
 export default api;

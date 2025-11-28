@@ -2,12 +2,17 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import date
+from datetime import date, datetime, timedelta
 from .database import get_session_local
 from .models import Transaction
 from .config import get_config
+from .utils import mask_token
 import os
 import asyncio
+import logging
+import requests
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -52,6 +57,7 @@ class TransactionOut(BaseModel):
 class ConfigUpdate(BaseModel):
     fio_token: Optional[str] = None
     fio_api_url: Optional[str] = None
+    back_date_days: Optional[int] = None
 
 @router.get("/transactions", response_model=List[TransactionOut])
 def list_transactions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
@@ -102,6 +108,7 @@ def get_current_config():
         "db_path": config.db_path,
         "fio_token": masked_token,
         "fio_api_url": config.fio_api_url,
+        "back_date_days": config.back_date_days,
         "static_dir": config.static_dir
     }
 
@@ -130,7 +137,85 @@ def update_config(config_update: ConfigUpdate):
     if config_update.fio_api_url is not None:
         current_data['fio-api-url'] = config_update.fio_api_url
     
+    if config_update.back_date_days is not None:
+        current_data['back-date-days'] = config_update.back_date_days
+    
     with open(config_path, 'w') as f:
         yaml.dump(current_data, f)
         
     return {"message": "Configuration updated. Please restart the server for changes to take effect."}
+
+class SetLastDateRequest(BaseModel):
+    days_back: Optional[int] = None  # If not provided, use config default
+
+@router.post("/set-last-date")
+async def set_last_date(request: SetLastDateRequest):
+    """
+    Set the last date (zarážka) in Fio API to prevent going too far back in history.
+    This helps prevent 422 errors when the history is too long.
+    """
+    config = get_config()
+    
+    if not config.fio_token:
+        raise HTTPException(
+            status_code=400, 
+            detail="Fio token not configured. Please configure your token in the Configuration section."
+        )
+    
+    # Use provided days_back or default from config
+    days_back = request.days_back if request.days_back is not None else config.back_date_days
+    
+    # Validate days_back
+    if days_back < 1 or days_back > 365:
+        raise HTTPException(
+            status_code=400,
+            detail="Days back must be between 1 and 365"
+        )
+    
+    # Calculate the target date
+    target_date = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
+    
+    # Call Fio API to set last date
+    # Format: https://fioapi.fio.cz/v1/rest/set-last-date/{token}/{rrrr-mm-dd}/
+    # Note: The correct domain is fioapi.fio.cz (not www.fioapi.cz)
+    set_last_date_url = f"https://fioapi.fio.cz/v1/rest/set-last-date/{config.fio_token}/{target_date}/"
+    
+    try:
+        logger.info(f"Setting last date to {target_date} ({days_back} days back)")
+        response = requests.get(set_last_date_url, timeout=10)
+        response.raise_for_status()
+        
+        logger.info("Successfully set last date in Fio API")
+        return {
+            "message": f"Successfully set last date to {target_date} ({days_back} days back)",
+            "target_date": target_date,
+            "days_back": days_back
+        }
+    except requests.exceptions.Timeout:
+        error_msg = "Request to Fio API timed out. Please try again later."
+        logger.error(error_msg)
+        raise HTTPException(status_code=504, detail=error_msg)
+    except requests.exceptions.ConnectionError as e:
+        error_msg = "Could not connect to Fio API. Please check your internet connection."
+        masked_error = mask_token(str(e), config.fio_token)
+        logger.error(f"{error_msg} Error: {masked_error}")
+        raise HTTPException(status_code=503, detail=error_msg)
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 409:
+            error_msg = "Fio API rate limit exceeded. Please wait at least 30 seconds between requests."
+        elif e.response.status_code == 401 or e.response.status_code == 403:
+            error_msg = "Invalid Fio API token. Please check your token configuration."
+        else:
+            error_msg = f"Fio API returned an error (status {e.response.status_code})"
+        
+        # Mask token in error message before logging
+        masked_error = mask_token(str(e), config.fio_token)
+        logger.error(f"{error_msg} Error: {masked_error}")
+        raise HTTPException(status_code=e.response.status_code, detail=error_msg)
+    except requests.exceptions.RequestException as e:
+        # Mask token in error message
+        masked_error = mask_token(str(e), config.fio_token)
+        error_msg = f"Failed to communicate with Fio API: {masked_error}"
+        logger.error(error_msg)
+        # Don't expose the full error to the client, just a generic message
+        raise HTTPException(status_code=500, detail="Failed to communicate with Fio API. Check server logs for details.")

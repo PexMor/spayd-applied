@@ -10,6 +10,7 @@ dependencies = [
     "fiobank>=4.0.0",
     "pydantic>=2.12.5",
     "pyyaml>=6.0.3",
+    "requests>=2.31.0",
     "sqlalchemy>=2.0.44",
     "uvicorn>=0.38.0",
     "websockets>=15.0.1",

@@ -95,8 +95,24 @@ The API is available at `/api/v1` and includes endpoints for:
 - Transaction management
 - Account information
 - Real-time updates via WebSocket
+- **Back Date Days (History Limit)** - Set the last date to prevent 422 errors
 
 API documentation is available at `http://localhost:3000/docs` (Swagger UI).
+
+### Back Date Days (History Limit) Feature
+
+To prevent 422 errors when fetching transactions, you can set a history limit (known as "zarážka" in Czech) that tells the Fio API how far back to search:
+
+```bash
+# Via API
+curl -X POST "http://localhost:3000/api/v1/set-last-date" \
+  -H "Content-Type: application/json" \
+  -d '{"days_back": 3}'
+```
+
+Or use the Web UI: **Fetch Control → Set History Limit**
+
+See [back_date_days_SETUP.md](back_date_days_SETUP.md) for detailed documentation.
 
 ## Development
 
@@ -114,4 +130,3 @@ pytest
 
 - Python >= 3.13
 - Dependencies are managed via `pyproject.toml`
-

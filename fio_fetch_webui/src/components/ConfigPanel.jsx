@@ -7,8 +7,10 @@ function ConfigPanel() {
     const [saving, setSaving] = useState(false);
     const [newToken, setNewToken] = useState('');
     const [newApiUrl, setNewApiUrl] = useState('');
+    const [newBackDateDays, setNewBackDateDays] = useState('');
     const [showTokenInput, setShowTokenInput] = useState(false);
     const [showApiUrlInput, setShowApiUrlInput] = useState(false);
+    const [showBackDateDaysInput, setShowBackDateDaysInput] = useState(false);
     const [message, setMessage] = useState(null);
 
     useEffect(() => {
@@ -80,6 +82,40 @@ function ConfigPanel() {
             setShowApiUrlInput(false);
 
             // Reload config to show updated URL
+            setTimeout(() => {
+                loadConfig();
+            }, 500);
+        } catch (error) {
+            console.error('Failed to update config:', error);
+            setMessage({
+                type: 'danger',
+                text: error.response?.data?.detail || 'Failed to update configuration',
+            });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleUpdateBackDateDays = async (e) => {
+        e.preventDefault();
+
+        const days = parseInt(newBackDateDays);
+        if (!days || days < 1 || days > 365) {
+            setMessage({ type: 'warning', text: 'Please enter a valid number of days (1-365)' });
+            return;
+        }
+
+        try {
+            setSaving(true);
+            setMessage(null);
+
+            const result = await updateConfig({ back_date_days: days });
+
+            setMessage({ type: 'success', text: result.message || 'Configuration updated successfully' });
+            setNewBackDateDays('');
+            setShowBackDateDaysInput(false);
+
+            // Reload config to show updated value
             setTimeout(() => {
                 loadConfig();
             }, 500);
@@ -179,6 +215,32 @@ function ConfigPanel() {
                             {!showApiUrlInput && (
                                 <button
                                     onClick={() => setShowApiUrlInput(true)}
+                                    className="btn-secondary"
+                                    style={{ padding: 'var(--space-xs) var(--space-sm)', fontSize: '0.875rem' }}
+                                >
+                                    Update
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div className="text-sm text-secondary mb-xs">History Limit (Days Back)</div>
+                        <div className="flex items-center gap-md">
+                            <code
+                                style={{
+                                    background: 'var(--bg-secondary)',
+                                    padding: 'var(--space-sm) var(--space-md)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    fontFamily: 'var(--font-mono)',
+                                    fontSize: '0.875rem',
+                                }}
+                            >
+                                {config?.back_date_days || 3} days
+                            </code>
+                            {!showBackDateDaysInput && (
+                                <button
+                                    onClick={() => setShowBackDateDaysInput(true)}
                                     className="btn-secondary"
                                     style={{ padding: 'var(--space-xs) var(--space-sm)', fontSize: '0.875rem' }}
                                 >
@@ -325,6 +387,74 @@ function ConfigPanel() {
                 </div>
             )}
 
+            {/* Update Back Date Days */}
+            {showBackDateDaysInput && (
+                <div className="card animate-fade-in">
+                    <div className="card-header">
+                        <h3>Update History Limit</h3>
+                    </div>
+
+                    <form onSubmit={handleUpdateBackDateDays}>
+                        <div className="flex flex-col gap-md">
+                            <div>
+                                <label className="text-sm text-secondary mb-xs" style={{ display: 'block' }}>
+                                    Days Back (Zarážka)
+                                </label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="365"
+                                    value={newBackDateDays}
+                                    onInput={(e) => setNewBackDateDays(e.target.value)}
+                                    placeholder="3"
+                                    style={{ width: '100%' }}
+                                    disabled={saving}
+                                />
+                                <p className="text-sm text-tertiary mt-xs">
+                                    Set the default number of days back for the history limit. This is used when setting the "zarážka" to prevent 422 errors. Valid range: 1-365 days.
+                                </p>
+                            </div>
+
+                            <div className="flex gap-md">
+                                <button type="submit" className="btn-primary" disabled={saving}>
+                                    {saving ? (
+                                        <>
+                                            <div className="spinner" style={{ width: '1rem', height: '1rem', borderWidth: '2px' }}></div>
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>💾</span>
+                                            Save Setting
+                                        </>
+                                    )}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowBackDateDaysInput(false);
+                                        setNewBackDateDays('');
+                                        setMessage(null);
+                                    }}
+                                    className="btn-secondary"
+                                    disabled={saving}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+
+                            <div
+                                className="badge badge-info"
+                                style={{ padding: 'var(--space-md)', fontSize: '0.875rem' }}
+                            >
+                                💡 <strong>Tip:</strong> This setting controls how far back the Fio API will search for transactions. Lower values help prevent 422 errors. You will need to restart the server for changes to take effect.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            )}
+
             {/* Help */}
             <div className="card" style={{ background: 'var(--bg-secondary)' }}>
                 <h4 className="mb-md">📖 Configuration Help</h4>
@@ -338,6 +468,9 @@ function ConfigPanel() {
                         Config file
                     </p>
                     <p>
+                        <strong>History Limit (Zarážka):</strong> Number of days back to set as the history limit in Fio API. This prevents 422 errors by limiting how far back the API searches. Default: 3 days.
+                    </p>
+                    <p>
                         <strong>Environment Variables:</strong>
                     </p>
                     <ul style={{ marginLeft: 'var(--space-lg)', marginTop: 'var(--space-xs)' }}>
@@ -346,6 +479,7 @@ function ConfigPanel() {
                         <li><code>FIO_FETCH_DB_PATH</code> - Database path</li>
                         <li><code>FIO_FETCH_TOKEN</code> - Fio API token (leave empty for example data)</li>
                         <li><code>FIO_FETCH_API_URL</code> - Fio API base URL (for testing with mock servers)</li>
+                        <li><code>FIO_FETCH_BACK_DATE_DAYS</code> - History limit in days (default: 3)</li>
                         <li><code>FIO_FETCH_STATIC_DIR</code> - Static files directory</li>
                     </ul>
                 </div>

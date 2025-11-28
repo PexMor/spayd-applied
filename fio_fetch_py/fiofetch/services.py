@@ -1,37 +1,14 @@
 import asyncio
 import time
-import re
 from typing import List
 from fastapi import WebSocket
 from .fio import fetch_and_save_transactions
 from .database import get_session_local, get_engine
 from .config import get_config
+from .utils import mask_token
 import logging
 
 logger = logging.getLogger(__name__)
-
-def mask_token_in_message(message: str, token: str) -> str:
-    """
-    Mask the token in error messages to prevent exposure in logs/UI.
-    Replaces the token with '<token>' placeholder.
-    """
-    if not token:
-        return message
-    
-    # Replace token in URLs and any other occurrences
-    # Use regex to be safe with special characters in token
-    masked_message = message.replace(token, '<token>')
-    
-    # Also handle URL-encoded tokens if present
-    try:
-        import urllib.parse
-        encoded_token = urllib.parse.quote(token)
-        if encoded_token != token:
-            masked_message = masked_message.replace(encoded_token, '<token>')
-    except Exception:
-        pass
-    
-    return masked_message
 
 class ConnectionManager:
     def __init__(self):
@@ -133,7 +110,7 @@ class FetchService:
                 # Mask token in error message before logging or broadcasting
                 error_str = str(e)
                 if config and config.fio_token:
-                    error_str = mask_token_in_message(error_str, config.fio_token)
+                    error_str = mask_token(error_str, config.fio_token)
                 
                 logger.error(f"Fetch failed: {error_str}")
                 error_message = f"❌ Fetch failed: {error_str}"
