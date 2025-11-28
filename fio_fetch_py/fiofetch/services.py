@@ -1,5 +1,6 @@
 import asyncio
 import time
+import re
 from typing import List
 from fastapi import WebSocket
 from .fio import fetch_and_save_transactions
@@ -8,6 +9,29 @@ from .config import get_config
 import logging
 
 logger = logging.getLogger(__name__)
+
+def mask_token_in_message(message: str, token: str) -> str:
+    """
+    Mask the token in error messages to prevent exposure in logs/UI.
+    Replaces the token with '<token>' placeholder.
+    """
+    if not token:
+        return message
+    
+    # Replace token in URLs and any other occurrences
+    # Use regex to be safe with special characters in token
+    masked_message = message.replace(token, '<token>')
+    
+    # Also handle URL-encoded tokens if present
+    try:
+        import urllib.parse
+        encoded_token = urllib.parse.quote(token)
+        if encoded_token != token:
+            masked_message = masked_message.replace(encoded_token, '<token>')
+    except Exception:
+        pass
+    
+    return masked_message
 
 class ConnectionManager:
     def __init__(self):
@@ -62,7 +86,7 @@ class FetchService:
 
         async with self.lock:
             self.last_fetch_time = time.time()
-            await self.manager.broadcast({"status": "started", "message": "Fetch started"})
+            await self.manager.broadcast({"status": "started", "message": "🚀 Fetch started..."})
             
             try:
                 # Run sync fetch in threadpool
@@ -82,7 +106,10 @@ class FetchService:
                         loop
                     )
 
+                config = None  # Store config to access token for masking
+                
                 def do_fetch():
+                    nonlocal config
                     config = get_config()
                     engine = get_engine(config.db_path)
                     SessionLocal = get_session_local(engine)
@@ -99,12 +126,18 @@ class FetchService:
 
                 count = await loop.run_in_executor(None, do_fetch)
                 
-                await self.manager.broadcast({"status": "completed", "new_transactions": count, "message": "Fetch completed successfully"})
+                await self.manager.broadcast({"status": "completed", "new_transactions": count, "message": f"✅ Fetch completed! Saved {count} new transaction(s)."})
                 return {"status": "success", "new_transactions": count}
                 
             except Exception as e:
-                logger.error(f"Fetch failed: {e}")
-                await self.manager.broadcast({"status": "error", "message": str(e)})
-                return {"status": "error", "message": str(e)}
+                # Mask token in error message before logging or broadcasting
+                error_str = str(e)
+                if config and config.fio_token:
+                    error_str = mask_token_in_message(error_str, config.fio_token)
+                
+                logger.error(f"Fetch failed: {error_str}")
+                error_message = f"❌ Fetch failed: {error_str}"
+                await self.manager.broadcast({"status": "error", "message": error_message})
+                return {"status": "error", "message": error_message}
 
 fetch_service = FetchService()

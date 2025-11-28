@@ -123,11 +123,12 @@ def update_config(config_update: ConfigUpdate):
             current_data = yaml.safe_load(f) or {}
     
     # Only update fields that were provided
+    # Note: YAML keys must match the command-line argument names with hyphens
     if config_update.fio_token is not None:
-        current_data['fio_token'] = config_update.fio_token
+        current_data['fio-token'] = config_update.fio_token
     
     if config_update.fio_api_url is not None:
-        current_data['fio_api_url'] = config_update.fio_api_url
+        current_data['fio-api-url'] = config_update.fio_api_url
     
     with open(config_path, 'w') as f:
         yaml.dump(current_data, f)
