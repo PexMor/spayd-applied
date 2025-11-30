@@ -5,6 +5,7 @@ import { generateEmailHtml, generateBatchZip } from '../services/email-generator
 import QRCode from 'qrcode';
 import spayd from 'spayd';
 import { IBAN } from 'ibankit';
+import { composeVS, composeSS, composeKS, symbolToNumber, isValidNumericSymbol } from '../utils/symbol-composer';
 
 interface EmailPreviewProps {
     data: BatchData;
@@ -21,15 +22,7 @@ export function EmailPreview({ data, config }: EmailPreviewProps) {
         generatePreview();
     }, [data, config, selectedRowIndex, t, locale]);
 
-    const generateVS = (rowIndex: number, rowVS?: string, splitVSPrefix?: string): string => {
-        // If row has VS, use it with the split's VS prefix
-        if (rowVS && rowVS.trim()) {
-            return (splitVSPrefix || '') + rowVS;
-        }
-        // Otherwise, generate sequential: splitVSPrefix + zero-padded index
-        const sequential = (rowIndex + 1).toString().padStart(3, '0');
-        return (splitVSPrefix || '') + sequential;
-    };
+    // Removed - now using composeVS, composeSS, composeKS from symbol-composer.ts
 
     const generatePreview = async () => {
         if (!data || data.rows.length === 0) {
@@ -66,24 +59,44 @@ export function EmailPreview({ data, config }: EmailPreviewProps) {
             const qrCodes: string[] = [];
             for (let i = 0; i < config.event.splits.length; i++) {
                 const split = config.event.splits[i];
-                const vs = generateVS(selectedRowIndex, row['VS'], split.vsPrefix);
+                const vs = composeVS(
+                    config.event.vsPrefix,
+                    config.event.vsSuffixLength,
+                    row['VS'] || '',
+                    selectedRowIndex,
+                    split.vsPrefix  // Split can override prefix only
+                );
+                const ss = composeSS(
+                    config.event.ssPrefix,
+                    config.event.ssSuffixLength,
+                    row['SS'] || '',
+                    selectedRowIndex,
+                    split.ssPrefix  // Split can override prefix only
+                );
+                const ks = composeKS(
+                    config.event.ksPrefix,
+                    config.event.ksSuffixLength,
+                    row['KS'] || '',
+                    selectedRowIndex,
+                    split.ksPrefix  // Split can override prefix only
+                );
 
                 const paymentDesc: any = {
                     acc: ibanElectronic,
                     am: split.amount.toFixed(2),
                     cc: config.account.currency,
-                    xvs: parseInt(vs, 10),  // Convert to number
+                    xvs: symbolToNumber(vs),  // Convert to number
                     msg: config.event.description || t.paymentDescriptionFallback,
                 };
 
-                // Only include SS if provided and valid (up to 10 digits)
-                if (split.ss && /^\d{1,10}$/.test(split.ss)) {
-                    paymentDesc.xss = parseInt(split.ss, 10);
+                // Only include SS if provided and valid numeric
+                if (ss && isValidNumericSymbol(ss)) {
+                    paymentDesc.xss = symbolToNumber(ss);
                 }
 
-                // Only include KS if it's exactly 4 digits
-                if (split.ks && /^\d{4}$/.test(split.ks)) {
-                    paymentDesc.xks = parseInt(split.ks, 10);
+                // Only include KS if provided and valid numeric
+                if (ks && isValidNumericSymbol(ks)) {
+                    paymentDesc.xks = symbolToNumber(ks);
                 }
 
                 const spaydString = spayd(paymentDesc);

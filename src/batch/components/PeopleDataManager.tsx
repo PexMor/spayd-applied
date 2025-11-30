@@ -45,27 +45,50 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
         const reader = new FileReader();
         reader.onload = (evt) => {
             try {
-                const bstr = evt.target?.result;
-                const wb = XLSX.read(bstr, { type: 'binary' });
+                const data = evt.target?.result;
+                // Use ArrayBuffer for better encoding handling, especially for UTF-8
+                const wb = XLSX.read(data, { 
+                    type: 'array',
+                    codepage: 65001, // UTF-8 code page
+                    cellDates: false,
+                    cellNF: false,
+                    cellText: false
+                });
                 const wsname = wb.SheetNames[0];
                 const ws = wb.Sheets[wsname];
-                const parsedData = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                const parsedData = XLSX.utils.sheet_to_json(ws, { 
+                    header: 1,
+                    raw: false, // Convert all values to strings
+                    defval: '' // Default value for empty cells
+                });
                 processData(parsedData);
             } catch (err) {
                 console.error(err);
                 setError(t.failedToParseFile);
             }
         };
-        reader.readAsBinaryString(file);
+        // Use ArrayBuffer for proper UTF-8 handling
+        reader.readAsArrayBuffer(file);
     };
 
     const handleTsvPaste = () => {
         if (!tsvData.trim()) return;
         try {
-            const wb = XLSX.read(tsvData, { type: 'string', raw: true });
+            const wb = XLSX.read(tsvData, { 
+                type: 'string',
+                codepage: 65001, // UTF-8 code page
+                raw: false,
+                cellDates: false,
+                cellNF: false,
+                cellText: false
+            });
             const wsname = wb.SheetNames[0];
             const ws = wb.Sheets[wsname];
-            const parsedData = XLSX.utils.sheet_to_json(ws, { header: 1 });
+            const parsedData = XLSX.utils.sheet_to_json(ws, { 
+                header: 1,
+                raw: false, // Convert all values to strings
+                defval: '' // Default value for empty cells
+            });
             processData(parsedData);
         } catch (err) {
             console.error(err);
@@ -74,11 +97,16 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
     };
 
     const loadDemoData = () => {
-        const demoHeaders = ['VS', 'FirstName', 'SecondName', 'Email'];
+        // Demo data: FirstName, SecondName, Email, KS
+        // VS will be auto-generated from row index
+        // KS demonstrates loading constant symbols from CSV
+        const demoHeaders = ['FirstName', 'SecondName', 'Email', 'KS'];
         const demoRows = [
-            ['', 'John', 'Doe', 'john.doe@example.com'],
-            ['456', 'Jane', 'Smith', 'jane.smith@example.com'],
-            ['', 'Bob', 'Johnson', 'bob.johnson@example.com'],
+            ['John', 'Doe', 'john.doe@example.com', '0308'],
+            ['Jane', 'Smith', 'jane.smith@example.com', '0558'],
+            ['Bob', 'Johnson', 'bob.johnson@example.com', '0308'],
+            ['Alice', 'Brown', 'alice.brown@example.com', '0008'],
+            ['Charlie', 'Wilson', 'charlie.wilson@example.com', '0308'],
         ];
         processData([demoHeaders, ...demoRows]);
     };
@@ -110,7 +138,8 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
     const handleExport = () => {
         if (!data) return;
         const dataStr = JSON.stringify(data, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        // Include UTF-8 BOM for better compatibility with tools that might not default to UTF-8
+        const dataBlob = new Blob(['\uFEFF' + dataStr], { type: 'application/json;charset=utf-8' });
         const url = URL.createObjectURL(dataBlob);
         const link = document.createElement('a');
         link.href = url;
@@ -139,7 +168,8 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
                 console.error(error);
             }
         };
-        reader.readAsText(file);
+        // Explicitly specify UTF-8 encoding for proper Czech character handling
+        reader.readAsText(file, 'UTF-8');
     };
 
     if (!data || isUploadOpen) {

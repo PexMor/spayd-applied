@@ -5,6 +5,7 @@ interface PaymentDetail {
     staticSymbol: string;
     constantSymbol: string;
     iban: string;
+    ibanHumanReadable: string;
     accountName: string;
     description: string;
     qrCodeDataUrl: string;
@@ -131,7 +132,10 @@ export const PaymentEmail = ({
                                     </p>
                                 )}
                                 <p style={{ fontSize: '16px', lineHeight: '26px', color: '#333', margin: '8px 0' }}>
-                                    <strong>{t.account}:</strong> {paymentDetails.iban}
+                                    <strong>{t.account}:</strong> {paymentDetails.ibanHumanReadable}
+                                </p>
+                                <p style={{ fontSize: '14px', lineHeight: '20px', color: '#666', margin: '4px 0 8px 0' }}>
+                                    <span style={{ fontSize: '12px' }}>IBAN:</span> {paymentDetails.iban}
                                 </p>
                                 <p style={{ fontSize: '16px', lineHeight: '26px', color: '#333', margin: '8px 0' }}>
                                     <strong>{t.variableSymbol}:</strong> {paymentDetails.variableSymbol}

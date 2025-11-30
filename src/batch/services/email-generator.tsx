@@ -6,6 +6,8 @@ import QRCode from 'qrcode';
 import spayd from 'spayd';
 import { IBAN } from 'ibankit';
 import { BatchConfig, BatchData } from '../BatchApp';
+import { formatCzechIBANHumanReadable } from '../utils/iban-generator';
+import { composeVS, composeSS, composeKS, symbolToNumber, isValidNumericSymbol } from '../utils/symbol-composer';
 
 export async function generateEmailHtml(
     row: any,
@@ -22,17 +24,40 @@ export async function generateEmailHtml(
     const body = replacePlaceholders(config.event.emailTemplate, row);
 
     // Create payment details for each split
-    const paymentDetailsList = config.event.splits.map((split, splitIndex) => {
-        const vs = generateVS(rowIndex, row['VS'], split.vsPrefix);
+    const event = config.event!; // Already checked event exists above
+    const paymentDetailsList = event.splits.map((split, splitIndex) => {
+        const vs = composeVS(
+            event.vsPrefix,
+            event.vsSuffixLength,
+            row['VS'] || '',
+            rowIndex,
+            split.vsPrefix  // Split can override prefix only, not length
+        );
+        const ss = composeSS(
+            event.ssPrefix,
+            event.ssSuffixLength,
+            row['SS'] || '',
+            rowIndex,
+            split.ssPrefix  // Split can override prefix only, not length
+        );
+        const ks = composeKS(
+            event.ksPrefix,
+            event.ksSuffixLength,
+            row['KS'] || '',
+            rowIndex,
+            split.ksPrefix  // Split can override prefix only, not length
+        );
+        
         return {
             amount: split.amount,
             currency: config.account.currency,
             variableSymbol: vs,
-            staticSymbol: split.ss || '',
-            constantSymbol: split.ks || '',
+            staticSymbol: ss || '',
+            constantSymbol: ks || '',
             iban: config.account.iban,
+            ibanHumanReadable: formatCzechIBANHumanReadable(config.account.iban),
             accountName: config.account.name,
-            description: config.event!.description,
+            description: event.description,
             qrCodeDataUrl: qrCodeDataUrls[splitIndex],
             dueDate: split.dueDate,  // Include due date if present
             logoUrl: config.account.logoUrl,
@@ -77,7 +102,7 @@ function generateTextVersion(
             const date = new Date(payment.dueDate);
             text += `${t.emailDueDate}: ${date.toLocaleDateString(locale === 'cs' ? 'cs-CZ' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}\n`;
         }
-        text += `${t.account}: ${payment.iban}\n`;
+        text += `${t.account}: ${payment.ibanHumanReadable} (IBAN: ${payment.iban})\n`;
         text += `${t.variableSymbol}: ${payment.variableSymbol}\n`;
         if (payment.constantSymbol) {
             text += `${t.emailConstantSymbol}: ${payment.constantSymbol}\n`;
@@ -179,15 +204,7 @@ function replacePlaceholders(template: string, data: any): string {
     return template.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] || '');
 }
 
-function generateVS(rowIndex: number, rowVS?: string, splitVSPrefix?: string): string {
-    // If row has VS, use it with the split's VS prefix
-    if (rowVS && rowVS.trim()) {
-        return (splitVSPrefix || '') + rowVS;
-    }
-    // Otherwise, generate sequential: splitVSPrefix + zero-padded index
-    const sequential = (rowIndex + 1).toString().padStart(3, '0');
-    return (splitVSPrefix || '') + sequential;
-}
+// Removed - now using composeVS, composeSS, composeKS from symbol-composer.ts
 
 export async function generateBatchZip(data: BatchData, config: BatchConfig, t: any, locale: string) {
     if (!config.event) {
@@ -204,26 +221,47 @@ export async function generateBatchZip(data: BatchData, config: BatchConfig, t: 
         if (!ibanElectronic || !IBAN.isValid(config.account.iban)) continue;
 
         const qrCodes: string[] = [];
-        for (let j = 0; j < config.event.splits.length; j++) {
-            const split = config.event.splits[j];
-            const vs = generateVS(i, row['VS'], split.vsPrefix);
+        const event = config.event!; // Already checked above
+        for (let j = 0; j < event.splits.length; j++) {
+            const split = event.splits[j];
+            const vs = composeVS(
+                event.vsPrefix,
+                event.vsSuffixLength,
+                row['VS'] || '',
+                i,
+                split.vsPrefix  // Split can override prefix only
+            );
+            const ss = composeSS(
+                event.ssPrefix,
+                event.ssSuffixLength,
+                row['SS'] || '',
+                i,
+                split.ssPrefix  // Split can override prefix only
+            );
+            const ks = composeKS(
+                event.ksPrefix,
+                event.ksSuffixLength,
+                row['KS'] || '',
+                i,
+                split.ksPrefix  // Split can override prefix only
+            );
 
             const paymentDesc: any = {
                 acc: ibanElectronic,
                 am: split.amount.toFixed(2),
                 cc: config.account.currency,
-                xvs: parseInt(vs, 10),  // Convert to number
-                msg: config.event.description || 'Payment',
+                xvs: symbolToNumber(vs),  // Convert to number
+                msg: event.description || 'Payment',
             };
 
-            // Only include SS if provided and valid (up to 10 digits)
-            if (split.ss && /^\d{1,10}$/.test(split.ss)) {
-                paymentDesc.xss = parseInt(split.ss, 10);
+            // Only include SS if provided and valid numeric
+            if (ss && isValidNumericSymbol(ss)) {
+                paymentDesc.xss = symbolToNumber(ss);
             }
 
-            // Only include KS if it's exactly 4 digits
-            if (split.ks && /^\d{4}$/.test(split.ks)) {
-                paymentDesc.xks = parseInt(split.ks, 10);
+            // Only include KS if provided and valid numeric
+            if (ks && isValidNumericSymbol(ks)) {
+                paymentDesc.xks = symbolToNumber(ks);
             }
 
             const spaydString = spayd(paymentDesc);
@@ -240,18 +278,40 @@ export async function generateBatchZip(data: BatchData, config: BatchConfig, t: 
         // Generate HTML
         const html = await generateEmailHtml(row, config, qrCodes, i, t, locale);
 
-        // Generate payment details list (same as in generateEmailHtml)
-        const paymentDetailsList = config.event.splits.map((split, splitIndex) => {
-            const vs = generateVS(i, row['VS'], split.vsPrefix);
+        // Generate payment details list (same as in generateEmailHtml - event already declared above)
+        const paymentDetailsList = event.splits.map((split, splitIndex) => {
+            const vs = composeVS(
+                event.vsPrefix,
+                event.vsSuffixLength,
+                row['VS'] || '',
+                i,
+                split.vsPrefix  // Split can override prefix only
+            );
+            const ss = composeSS(
+                event.ssPrefix,
+                event.ssSuffixLength,
+                row['SS'] || '',
+                i,
+                split.ssPrefix  // Split can override prefix only
+            );
+            const ks = composeKS(
+                event.ksPrefix,
+                event.ksSuffixLength,
+                row['KS'] || '',
+                i,
+                split.ksPrefix  // Split can override prefix only
+            );
+            
             return {
                 amount: split.amount,
                 currency: config.account.currency,
                 variableSymbol: vs,
-                staticSymbol: split.ss || '',
-                constantSymbol: split.ks || '',
+                staticSymbol: ss || '',
+                constantSymbol: ks || '',
                 iban: config.account.iban,
+                ibanHumanReadable: formatCzechIBANHumanReadable(config.account.iban),
                 accountName: config.account.name,
-                description: config.event!.description,
+                description: event.description,
                 qrCodeDataUrl: qrCodes[splitIndex],
                 dueDate: split.dueDate,
                 logoUrl: config.account.logoUrl,
@@ -275,7 +335,13 @@ export async function generateBatchZip(data: BatchData, config: BatchConfig, t: 
         );
 
         // Add to ZIP with organized folders
-        const firstVS = generateVS(i, row['VS'], config.event.splits[0].vsPrefix);
+        const firstVS = composeVS(
+            event.vsPrefix,
+            event.vsSuffixLength,
+            row['VS'] || '',
+            i,
+            event.splits[0].vsPrefix  // Split can override prefix only
+        );
         const fileName = `payment_${firstVS || i + 1}`;
 
         // Create folders if they don't exist

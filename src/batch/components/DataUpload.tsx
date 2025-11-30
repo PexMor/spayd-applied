@@ -42,27 +42,50 @@ export function DataUpload({ onDataLoaded }: DataUploadProps) {
         const reader = new FileReader();
         reader.onload = (evt) => {
             try {
-                const bstr = evt.target?.result;
-                const wb = XLSX.read(bstr, { type: 'binary' });
+                const arrayBuffer = evt.target?.result;
+                // Use ArrayBuffer for better encoding handling, especially for UTF-8
+                const wb = XLSX.read(arrayBuffer, { 
+                    type: 'array',
+                    codepage: 65001, // UTF-8 code page
+                    cellDates: false,
+                    cellNF: false,
+                    cellText: false
+                });
                 const wsname = wb.SheetNames[0];
                 const ws = wb.Sheets[wsname];
-                const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                const data = XLSX.utils.sheet_to_json(ws, { 
+                    header: 1,
+                    raw: false, // Convert all values to strings
+                    defval: '' // Default value for empty cells
+                });
                 processData(data);
             } catch (err) {
                 console.error(err);
                 setError(t.parseError);
             }
         };
-        reader.readAsBinaryString(file);
+        // Use ArrayBuffer for proper UTF-8 handling
+        reader.readAsArrayBuffer(file);
     };
 
     const handleTsvPaste = () => {
         if (!tsvData.trim()) return;
         try {
-            const wb = XLSX.read(tsvData, { type: 'string', raw: true });
+            const wb = XLSX.read(tsvData, { 
+                type: 'string',
+                codepage: 65001, // UTF-8 code page
+                raw: false,
+                cellDates: false,
+                cellNF: false,
+                cellText: false
+            });
             const wsname = wb.SheetNames[0];
             const ws = wb.Sheets[wsname];
-            const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+            const data = XLSX.utils.sheet_to_json(ws, { 
+                header: 1,
+                raw: false, // Convert all values to strings
+                defval: '' // Default value for empty cells
+            });
             processData(data);
             setFileName(t.loadPasted);
         } catch (err) {

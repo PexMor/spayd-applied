@@ -92,7 +92,8 @@ export function BatchAccountManager({
 
     const handleExport = () => {
         const dataStr = JSON.stringify(accounts, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        // Include UTF-8 BOM for better compatibility
+        const dataBlob = new Blob(['\uFEFF' + dataStr], { type: 'application/json;charset=utf-8' });
         const url = URL.createObjectURL(dataBlob);
         const link = document.createElement('a');
         link.href = url;
@@ -123,7 +124,8 @@ export function BatchAccountManager({
                 console.error(error);
             }
         };
-        reader.readAsText(file);
+        // Explicitly specify UTF-8 encoding for proper character handling
+        reader.readAsText(file, 'UTF-8');
     };
 
     if (isEditing) {
