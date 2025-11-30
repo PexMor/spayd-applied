@@ -1,6 +1,6 @@
 import { render } from 'preact-render-to-string';
 import { PaymentEmail } from '../templates/PaymentEmail';
-import * as JSZip from 'jszip';
+import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import QRCode from 'qrcode';
 import spayd from 'spayd';
