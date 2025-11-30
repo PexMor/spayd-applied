@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Define source and destination directories
 SRC_DIR="$SCRIPT_DIR/dist"
-DEST_DIR="$SCRIPT_DIR/docs"
+DEST_DIR="$SCRIPT_DIR/docs/app"
 
 # Check if source directory exists
 if [ ! -d "$SRC_DIR" ]; then
