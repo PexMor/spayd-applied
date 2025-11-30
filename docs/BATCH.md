@@ -5,6 +5,7 @@ Complete guide for using the Batch Payment Processor to generate multiple paymen
 ## Overview
 
 The Batch Payment Processor is designed for scenarios where you need to send payment requests to multiple people, such as:
+
 - Event organizers collecting fees from attendees
 - Clubs or associations collecting membership dues
 - Small businesses invoicing multiple clients
@@ -60,6 +61,7 @@ Define the payment event:
 **Option A: Excel/CSV Import**
 
 1. Prepare your file with columns:
+
    - Name
    - Email
    - Amount (optional if event has default)
@@ -102,6 +104,7 @@ Define the payment event:
 ### 6. Send Emails
 
 Use the exported HTML files with your email client or service:
+
 - Mail merge in Outlook/Gmail
 - Email marketing platform (Mailchimp, SendGrid, etc.)
 - Custom scripts
@@ -113,22 +116,25 @@ Use the exported HTML files with your email client or service:
 ### Excel Format
 
 **Required Columns:**
+
 - `Name` or `Jméno`: Full name
 - `Email` or `E-mail`: Valid email address
 
 **Optional Columns:**
+
 - `Amount` or `Částka`: Payment amount
 - `VS` or `Variable Symbol` or `Variabilní symbol`: Unique identifier
 
 **Example:**
 
-| Name | Email | Amount | VS |
-|------|-------|--------|-----|
-| Jan Novák | jan.novak@example.com | 1500 | 20251001 |
-| Eva Svobodová | eva.svobodova@example.com | 1500 | 20251002 |
-| Petr Dvořák | petr.dvorak@example.com | 1200 | 20251003 |
+| Name          | Email                     | Amount | VS       |
+| ------------- | ------------------------- | ------ | -------- |
+| Jan Novák     | jan.novak@example.com     | 1500   | 20251001 |
+| Eva Svobodová | eva.svobodova@example.com | 1500   | 20251002 |
+| Petr Dvořák   | petr.dvorak@example.com   | 1200   | 20251003 |
 
 **Tips:**
+
 - First row must be headers
 - Amount should be numeric (no currency symbols)
 - VS should be numeric and unique
@@ -152,15 +158,18 @@ Petr Dvořák,petr.dvorak@example.com,1200,20251003
 If Variable Symbol not provided, system auto-generates:
 
 **Method 1: Sequential**
+
 - Format: `YYYYMMDD` + sequential number
 - Example: `202511301`, `202511302`, `202511303`
 
 **Method 2: Hash-based**
+
 - Based on name and timestamp
 - Ensures uniqueness
 - Example: `156789012`
 
 **Best Practice:**
+
 - Use your own VS for tracking
 - Ensure uniqueness across all payments
 - Use meaningful patterns (e.g., date + person ID)
@@ -176,6 +185,7 @@ The system provides a default email template:
 **Subject:** Payment Request - [Event Name]
 
 **Body:**
+
 ```
 Hello [Name],
 
@@ -231,6 +241,7 @@ Organizační tým
 System generates two versions:
 
 1. **HTML Version**
+
    - Rich formatting
    - Embedded QR code (Base64)
    - Modern design
@@ -248,6 +259,7 @@ System generates two versions:
 ### ZIP Archive Export
 
 **Contents:**
+
 ```
 batch-export.zip
 ├── emails/
@@ -267,12 +279,14 @@ batch-export.zip
 ### Individual File Export
 
 Download files one by one:
+
 - Click person's row
 - Click "Download Email" or "Download QR"
 
 ### Data Export
 
 Export people list for backup:
+
 - JSON format
 - CSV format
 - Excel format (planned)
@@ -286,6 +300,7 @@ Export people list for backup:
 **Scenario:** Collecting €50 from 30 students
 
 **Steps:**
+
 1. Create account "School Trip Fund"
 2. Create event "Vienna Trip 2025" with €50 default
 3. Import student list (name, email, parent email)
@@ -299,6 +314,7 @@ Export people list for backup:
 **Scenario:** Annual membership dues (varying amounts)
 
 **Steps:**
+
 1. Create account "Club Account"
 2. Create event "Annual Membership 2025"
 3. Manual entry or import with different amounts per member type
@@ -312,6 +328,7 @@ Export people list for backup:
 **Scenario:** Collecting contributions from guests
 
 **Steps:**
+
 1. Create account "Wedding Gift Fund"
 2. Create event "Our Wedding" (no default amount)
 3. Import guest list with suggested amounts
@@ -325,12 +342,14 @@ Export people list for backup:
 **Scenario:** Corporate retreat with different room types
 
 **Steps:**
+
 1. Create event "Company Retreat 2025"
 2. Import employee list with room-based pricing
 3. Generate payments
 4. Send via company email system
 
 **Excel Structure:**
+
 ```
 | Employee | Email | Room Type | Amount | VS |
 |----------|-------|-----------|--------|-----|
@@ -345,10 +364,12 @@ Export people list for backup:
 ### Bulk Operations
 
 **Select Multiple:**
+
 - Checkbox selection for multiple people
 - Bulk actions: Delete, Export, Regenerate
 
 **Filter & Search:**
+
 - Search by name, email, VS
 - Filter by amount range
 - Sort by any column
@@ -356,17 +377,20 @@ Export people list for backup:
 ### Payment Tracking
 
 **Status Tracking:**
+
 - Pending
 - Sent (email sent)
 - Paid (manual marking)
 - Cancelled
 
 **Mark as Paid:**
+
 1. Select person
 2. Click "Mark as Paid"
 3. Enter payment date (optional)
 
 **Export Paid List:**
+
 - Filter by "Paid" status
 - Export for accounting
 
@@ -422,16 +446,19 @@ Add custom fields for personalization:
 ### Import Issues
 
 **"Invalid file format"**
+
 - Ensure file is .xlsx or .csv
 - Check for corrupt file
 - Try re-saving in Excel
 
 **"Missing required columns"**
+
 - Verify Name and Email columns exist
 - Check column header spelling
 - Ensure headers in first row
 
 **"Invalid email addresses"**
+
 - Review email format (must have @ and domain)
 - Remove spaces around emails
 - Check for special characters
@@ -439,16 +466,19 @@ Add custom fields for personalization:
 ### Generation Issues
 
 **QR codes not generating:**
+
 - Verify IBAN is valid
 - Check amount is positive number
 - Ensure VS is numeric
 
 **Emails look broken:**
+
 - Check for special characters in template
 - Verify all variables are closed with }
 - Test in different browsers
 
 **Export fails:**
+
 - Clear browser cache
 - Check available disk space
 - Try smaller batch size
@@ -456,11 +486,13 @@ Add custom fields for personalization:
 ### Browser Issues
 
 **Data not saving:**
+
 - Enable browser storage
 - Check private browsing mode (doesn't persist)
 - Clear old batch data
 
 **Performance slow:**
+
 - Limit batch size to <100 at once
 - Clear completed batches
 - Use modern browser (Chrome, Firefox)
@@ -469,21 +501,22 @@ Add custom fields for personalization:
 
 ## Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
+| Shortcut   | Action         |
+| ---------- | -------------- |
 | `Ctrl + N` | Add new person |
-| `Ctrl + I` | Import data |
+| `Ctrl + I` | Import data    |
 | `Ctrl + G` | Generate batch |
-| `Ctrl + E` | Export batch |
-| `Ctrl + S` | Save changes |
-| `Esc` | Close dialog |
-| `Ctrl + F` | Search/filter |
+| `Ctrl + E` | Export batch   |
+| `Ctrl + S` | Save changes   |
+| `Esc`      | Close dialog   |
+| `Ctrl + F` | Search/filter  |
 
 ---
 
 ## Limits & Constraints
 
 **Technical Limits:**
+
 - Max people per batch: 500 (recommended <100)
 - Max file size: 5MB
 - Supported formats: XLSX, CSV
@@ -491,6 +524,7 @@ Add custom fields for personalization:
 - Variable Symbol: Max 10 digits
 
 **Browser Storage:**
+
 - Uses IndexedDB
 - No server storage
 - Data stays on device
@@ -535,4 +569,3 @@ A: ~100KB per email (HTML + embedded QR). Well within limits.
 ---
 
 **Questions or issues? Check the [User Guide](USER_GUIDE.md) or [AGENTS.md](../AGENTS.md) for more details.**
-

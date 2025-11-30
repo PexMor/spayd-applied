@@ -19,12 +19,14 @@ Guide for developers contributing to SPAYD Applied.
 ### Prerequisites
 
 **Required:**
+
 - Node.js >= 16.x (recommend 20.x LTS)
 - Yarn >= 1.22 or npm >= 8.x
 - Git
 - A modern code editor (VS Code recommended)
 
 **For FioFetch:**
+
 - Python >= 3.13
 - `uv` package manager (or pip)
 - Docker (optional, for containerized development)
@@ -32,12 +34,14 @@ Guide for developers contributing to SPAYD Applied.
 ### Initial Setup
 
 **1. Clone the repository:**
+
 ```bash
 git clone https://github.com/pexmor/spayd-applied.git
 cd spayd-applied
 ```
 
 **2. Install dependencies:**
+
 ```bash
 # Main app + Batch app
 yarn install
@@ -54,6 +58,7 @@ cd ..
 ```
 
 **3. Verify installation:**
+
 ```bash
 # Main app
 yarn dev
@@ -70,6 +75,7 @@ yarn dev
 ### Development Tools
 
 **Recommended VS Code Extensions:**
+
 - ESLint
 - Prettier
 - TypeScript and JavaScript
@@ -78,6 +84,7 @@ yarn dev
 - Docker
 
 **Browser DevTools:**
+
 - Chrome DevTools (Application tab for IndexedDB)
 - React DevTools (works with Preact)
 - Network tab for API debugging
@@ -177,18 +184,21 @@ fio_fetch_webui/
 ### Running Development Servers
 
 **Main App (SPAYD QR Generator):**
+
 ```bash
 yarn dev
 # Access at http://localhost:5173
 ```
 
 **Batch App:**
+
 ```bash
 yarn dev
 # Access at http://localhost:5173/batch.html
 ```
 
 **FioFetch Backend:**
+
 ```bash
 cd fio_fetch_py
 fiofetch --fio-token YOUR_TOKEN --debug
@@ -196,6 +206,7 @@ fiofetch --fio-token YOUR_TOKEN --debug
 ```
 
 **FioFetch Frontend:**
+
 ```bash
 cd fio_fetch_webui
 yarn dev
@@ -206,6 +217,7 @@ yarn dev
 ### Hot Reloading
 
 All development servers support hot module replacement (HMR):
+
 - Changes to source files trigger automatic reload
 - Component state preserved where possible
 - CSS updates without full reload
@@ -213,21 +225,24 @@ All development servers support hot module replacement (HMR):
 ### Working with IndexedDB
 
 **Inspect Storage:**
+
 1. Open Chrome DevTools
 2. Navigate to Application tab
 3. Expand IndexedDB
 4. Find databases: `spayd-db`, `batch-db`
 
 **Clear Storage:**
+
 ```javascript
 // In browser console
-indexedDB.deleteDatabase('spayd-db');
-indexedDB.deleteDatabase('batch-db');
+indexedDB.deleteDatabase("spayd-db");
+indexedDB.deleteDatabase("batch-db");
 location.reload();
 ```
 
 **Migration Strategy:**
 When changing schema:
+
 1. Increment database version in `db.ts`
 2. Add migration logic in `onupgradeneeded`
 3. Test with existing data
@@ -236,6 +251,7 @@ When changing schema:
 ### Working with SQLite (FioFetch)
 
 **Database Location:**
+
 ```bash
 # Development
 ~/.config/fio_fetch/fio.db
@@ -245,6 +261,7 @@ When changing schema:
 ```
 
 **Inspect Database:**
+
 ```bash
 sqlite3 ~/.config/fio_fetch/fio.db
 sqlite> .tables
@@ -253,6 +270,7 @@ sqlite> .quit
 ```
 
 **Reset Database:**
+
 ```bash
 rm ~/.config/fio_fetch/fio.db
 # Restart backend - will recreate tables
@@ -265,6 +283,7 @@ rm ~/.config/fio_fetch/fio.db
 ### TypeScript / JavaScript
 
 **Style Guide:**
+
 - Use TypeScript for type safety
 - Functional components (no classes)
 - Hooks for state management
@@ -272,9 +291,10 @@ rm ~/.config/fio_fetch/fio.db
 - Comments for complex logic
 
 **Example Component:**
+
 ```typescript
-import { h } from 'preact';
-import { useState, useEffect } from 'preact/hooks';
+import { h } from "preact";
+import { useState, useEffect } from "preact/hooks";
 
 interface Props {
   accountId: string;
@@ -282,8 +302,8 @@ interface Props {
 }
 
 export const AccountForm = ({ accountId, onSave }: Props) => {
-  const [name, setName] = useState('');
-  const [iban, setIban] = useState('');
+  const [name, setName] = useState("");
+  const [iban, setIban] = useState("");
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
@@ -292,15 +312,15 @@ export const AccountForm = ({ accountId, onSave }: Props) => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <input 
-        type="text" 
-        value={name} 
+      <input
+        type="text"
+        value={name}
         onChange={(e) => setName(e.currentTarget.value)}
         placeholder="Account Name"
       />
-      <input 
-        type="text" 
-        value={iban} 
+      <input
+        type="text"
+        value={iban}
         onChange={(e) => setIban(e.currentTarget.value)}
         placeholder="IBAN"
       />
@@ -311,6 +331,7 @@ export const AccountForm = ({ accountId, onSave }: Props) => {
 ```
 
 **Naming Conventions:**
+
 - Components: PascalCase (`AccountManager.tsx`)
 - Files: kebab-case for utilities (`payment-generator.ts`)
 - Functions: camelCase (`generateQRCode`)
@@ -320,12 +341,14 @@ export const AccountForm = ({ accountId, onSave }: Props) => {
 ### Python
 
 **Style Guide:**
+
 - Follow PEP 8
 - Type hints for all functions
 - Docstrings for public APIs
 - Async/await for I/O operations
 
 **Example:**
+
 ```python
 from typing import List, Optional
 from pydantic import BaseModel
@@ -337,26 +360,26 @@ class Transaction(BaseModel):
     description: Optional[str] = None
 
 async def fetch_transactions(
-    token: str, 
+    token: str,
     days_back: int = 30
 ) -> List[Transaction]:
     """
     Fetch transactions from Fio Bank API.
-    
+
     Args:
         token: Fio Bank API token
         days_back: Number of days to fetch (1-365)
-    
+
     Returns:
         List of Transaction objects
-    
+
     Raises:
         ValueError: If days_back is out of range
         ConnectionError: If API is unreachable
     """
     if not 1 <= days_back <= 365:
         raise ValueError("days_back must be between 1 and 365")
-    
+
     # Implementation
     ...
 ```
@@ -364,12 +387,14 @@ async def fetch_transactions(
 ### CSS / Styling
 
 **Approach:**
+
 - TailwindCSS utility classes (primary)
 - Custom CSS for complex components
 - CSS modules not used (small project)
 - Responsive design (mobile-first)
 
 **Example:**
+
 ```tsx
 // Prefer Tailwind utilities
 <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
@@ -383,6 +408,7 @@ async def fetch_transactions(
 ```
 
 **Custom CSS File Structure:**
+
 ```css
 /* app.css */
 .payment-form-grid {
@@ -401,6 +427,7 @@ async def fetch_transactions(
 **Framework:** pytest
 
 **Run Tests:**
+
 ```bash
 cd fio_fetch_py
 pytest
@@ -412,6 +439,7 @@ pytest --cov=fiofetch --cov-report=html
 ```
 
 **Test Structure:**
+
 ```python
 # tests/test_api.py
 import pytest
@@ -431,6 +459,7 @@ async def test_fetch_transactions(mock_fio_client):
 ```
 
 **Writing Tests:**
+
 1. Place in `tests/` directory
 2. Name files `test_*.py`
 3. Use fixtures for common setup
@@ -440,6 +469,7 @@ async def test_fetch_transactions(mock_fio_client):
 ### Manual Testing
 
 **Main App Testing Checklist:**
+
 - [ ] Add account with valid IBAN
 - [ ] Add account with invalid IBAN (should fail)
 - [ ] Create event linked to account
@@ -452,6 +482,7 @@ async def test_fetch_transactions(mock_fio_client):
 - [ ] Test offline mode (disable network)
 
 **Batch App Testing:**
+
 - [ ] Import Excel file with people data
 - [ ] Generate batch payments
 - [ ] Preview email templates
@@ -460,6 +491,7 @@ async def test_fetch_transactions(mock_fio_client):
 - [ ] Test email HTML rendering
 
 **FioFetch Testing:**
+
 - [ ] Configure with valid token
 - [ ] Fetch transactions
 - [ ] Set history limit
@@ -471,16 +503,19 @@ async def test_fetch_transactions(mock_fio_client):
 ### Browser Compatibility Testing
 
 **Target Browsers:**
+
 - Chrome (latest)
 - Firefox (latest)
 - Safari (latest)
 - Edge (latest)
 
 **Mobile Testing:**
+
 - iOS Safari (14+)
 - Android Chrome (latest)
 
 **Tools:**
+
 - BrowserStack (cross-browser testing)
 - Chrome DevTools device emulation
 - Real devices when possible
@@ -492,18 +527,21 @@ async def test_fetch_transactions(mock_fio_client):
 ### Production Builds
 
 **Main App:**
+
 ```bash
 yarn build
 # Output: dist/
 ```
 
 **Batch App:**
+
 ```bash
 yarn build
 # Output: dist/batch.html
 ```
 
 **FioFetch:**
+
 ```bash
 # Backend - no build needed (Python)
 # Frontend
@@ -515,6 +553,7 @@ yarn build
 ### Build Optimization
 
 **Vite automatically:**
+
 - Minifies JavaScript/CSS
 - Tree shakes unused code
 - Splits code into chunks
@@ -522,6 +561,7 @@ yarn build
 - Generates source maps (dev only)
 
 **Manual Optimization:**
+
 ```bash
 # Analyze bundle size
 yarn build
@@ -534,12 +574,14 @@ npx depcheck
 ### GitHub Pages Deployment
 
 **Automated Deployment:**
+
 1. Push to `main` branch
 2. GitHub Actions builds project
 3. Deploys to `gh-pages` branch
 4. Available at https://pexmor.github.io/spayd-applied/
 
 **Manual Deployment:**
+
 ```bash
 # Build
 yarn build
@@ -556,6 +598,7 @@ git push origin main
 ### Docker Deployment
 
 **Build Image:**
+
 ```bash
 ./d10_build.sh
 # or
@@ -563,6 +606,7 @@ docker build -t fiofetch:latest .
 ```
 
 **Run Container:**
+
 ```bash
 ./d20_run.sh
 # or
@@ -572,6 +616,7 @@ docker run -d -p 3000:3000 \
 ```
 
 **Production Considerations:**
+
 - Use reverse proxy (nginx/traefik)
 - Enable HTTPS
 - Set resource limits
@@ -617,6 +662,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -626,6 +672,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 - `chore`: Build process, dependencies
 
 **Examples:**
+
 ```bash
 feat(batch): Add Excel import for people data
 fix(fiofetch): Correct Fio API URL
@@ -636,6 +683,7 @@ refactor(db): Simplify IndexedDB wrapper
 ### Pull Request Guidelines
 
 **Before submitting:**
+
 - [ ] Code follows project style
 - [ ] Tests pass (if applicable)
 - [ ] Documentation updated
@@ -644,22 +692,27 @@ refactor(db): Simplify IndexedDB wrapper
 - [ ] Descriptive PR title and description
 
 **PR Description Template:**
+
 ```markdown
 ## Description
+
 Brief description of changes
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Documentation update
 - [ ] Refactoring
 
 ## Testing
+
 How to test these changes
 
 ## Screenshots (if applicable)
 
 ## Checklist
+
 - [ ] Code follows style guidelines
 - [ ] Tests added/updated
 - [ ] Documentation updated
@@ -677,6 +730,7 @@ How to test these changes
 ### Getting Help
 
 **Questions?**
+
 - Check [AGENTS.md](../AGENTS.md) for architecture details
 - Review existing issues on GitHub
 - Ask in PR comments
@@ -698,12 +752,14 @@ How to test these changes
 ## Development Resources
 
 ### Documentation
+
 - [AGENTS.md](../AGENTS.md) - Architecture and design
 - [USER_GUIDE.md](USER_GUIDE.md) - Feature documentation
 - [API.md](API.md) - API reference
 - [DOCKER.md](../DOCKER.md) - Docker deployment
 
 ### External Resources
+
 - [Preact Documentation](https://preactjs.com/)
 - [Vite Guide](https://vitejs.dev/guide/)
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/)
@@ -713,6 +769,7 @@ How to test these changes
 - [Fio Bank API Docs](https://www.fio.cz/docs/cz/API_Bankovnictvi.pdf)
 
 ### Tools
+
 - [Vite Bundle Analyzer](https://www.npmjs.com/package/vite-bundle-visualizer)
 - [SQLite Browser](https://sqlitebrowser.org/)
 - [Postman](https://www.postman.com/) - API testing
@@ -721,4 +778,3 @@ How to test these changes
 ---
 
 **Happy coding! 🚀**
-

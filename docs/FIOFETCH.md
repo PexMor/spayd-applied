@@ -7,6 +7,7 @@ Complete guide for FioFetch, the transaction fetcher and manager for Czech Fio B
 FioFetch is a self-hosted web application for fetching, storing, and managing transactions from Fio Bank. It provides a modern web interface and REST API for accessing your transaction data.
 
 **Key Features:**
+
 - ✅ Fetch transactions from Fio Bank API
 - ✅ Store transactions in local SQLite database
 - ✅ Modern web UI with real-time updates
@@ -36,23 +37,27 @@ FioFetch is a self-hosted web application for fetching, storing, and managing tr
 ### Prerequisites
 
 **Fio Bank API Token:**
+
 1. Log in to Fio Bank internet banking
 2. Navigate to Settings → API
 3. Generate a read-only token
 4. Copy the token (you'll need it for configuration)
 
 **System Requirements:**
+
 - Docker (recommended) OR
 - Python 3.13+ and Node.js 16+ (for local development)
 
 ### Quick Start (Docker)
 
 **1. Build the image:**
+
 ```bash
 ./d10_build.sh
 ```
 
 **2. Run the container:**
+
 ```bash
 FIO_FETCH_TOKEN=your_token ./d20_run.sh
 ```
@@ -61,6 +66,7 @@ FIO_FETCH_TOKEN=your_token ./d20_run.sh
 Open http://localhost:3000 in your browser
 
 **4. Configure (if token not set):**
+
 - Click "Configuration" tab
 - Enter your Fio Bank API token
 - Click "Save"
@@ -68,6 +74,7 @@ Open http://localhost:3000 in your browser
 ### Local Development Setup
 
 **Backend:**
+
 ```bash
 cd fio_fetch_py
 uv sync
@@ -76,6 +83,7 @@ fiofetch
 ```
 
 **Frontend:**
+
 ```bash
 cd fio_fetch_webui
 yarn install
@@ -99,24 +107,26 @@ FioFetch supports multiple configuration sources (in priority order):
 
 ### Configuration Options
 
-| Option | CLI | Environment | Config File | Default |
-|--------|-----|-------------|-------------|---------|
-| Host | `--host` | `FIO_FETCH_HOST` | `host` | `0.0.0.0` |
-| Port | `--port` | `FIO_FETCH_PORT` | `port` | `3000` |
-| Token | `--fio-token` | `FIO_FETCH_TOKEN` | `fio-token` | (none) |
-| DB Path | `--db-path` | `FIO_FETCH_DB_PATH` | `db-path` | `~/.config/fio_fetch/fio.db` |
-| Static Dir | `--static-dir` | `FIO_FETCH_STATIC_DIR` | `static-dir` | `static` |
-| API URL | `--fio-api-url` | `FIO_FETCH_API_URL` | `fio-api-url` | `https://fioapi.fio.cz/v1/rest` |
-| History Limit | `--back-date-days` | `FIO_FETCH_BACK_DATE_DAYS` | `back-date-days` | `3` |
+| Option        | CLI                | Environment                | Config File      | Default                         |
+| ------------- | ------------------ | -------------------------- | ---------------- | ------------------------------- |
+| Host          | `--host`           | `FIO_FETCH_HOST`           | `host`           | `0.0.0.0`                       |
+| Port          | `--port`           | `FIO_FETCH_PORT`           | `port`           | `3000`                          |
+| Token         | `--fio-token`      | `FIO_FETCH_TOKEN`          | `fio-token`      | (none)                          |
+| DB Path       | `--db-path`        | `FIO_FETCH_DB_PATH`        | `db-path`        | `~/.config/fio_fetch/fio.db`    |
+| Static Dir    | `--static-dir`     | `FIO_FETCH_STATIC_DIR`     | `static-dir`     | `static`                        |
+| API URL       | `--fio-api-url`    | `FIO_FETCH_API_URL`        | `fio-api-url`    | `https://fioapi.fio.cz/v1/rest` |
+| History Limit | `--back-date-days` | `FIO_FETCH_BACK_DATE_DAYS` | `back-date-days` | `3`                             |
 
 ### Example Configurations
 
 **Command Line:**
+
 ```bash
 fiofetch --host 0.0.0.0 --port 8080 --fio-token YOUR_TOKEN
 ```
 
 **Environment Variables:**
+
 ```bash
 export FIO_FETCH_TOKEN=your_token
 export FIO_FETCH_PORT=8080
@@ -125,6 +135,7 @@ fiofetch
 ```
 
 **Configuration File** (`~/.config/fio_fetch/config.yaml`):
+
 ```yaml
 host: 0.0.0.0
 port: 3000
@@ -136,6 +147,7 @@ back-date-days: 7
 ```
 
 **Docker with Environment Variables:**
+
 ```bash
 docker run -d \
   -p 3000:3000 \
@@ -152,6 +164,7 @@ docker run -d \
 ### Dashboard
 
 **Overview page showing:**
+
 - Account balance (if available)
 - Total transactions count
 - Recent transactions
@@ -161,18 +174,21 @@ docker run -d \
 ### Fetch Control
 
 **Manual Fetch:**
+
 1. Click "Fetch Now" button
 2. Wait for API response (may take a few seconds)
 3. View status message
 4. Check transaction list for new entries
 
 **Set History Limit:**
+
 1. Enter number of days (1-365)
 2. Click "Set History Limit"
 3. Confirmation shown
 4. Future fetches respect this limit
 
 **What is History Limit?**
+
 - Sets a checkpoint date in Fio Bank
 - Tells API: "Don't search before this date"
 - Prevents timeouts on large histories
@@ -181,12 +197,14 @@ docker run -d \
 ### Transaction List
 
 **Features:**
+
 - Paginated table (default: 50 per page)
 - Sortable columns (click header)
 - Search/filter capabilities
 - Export options
 
 **Columns:**
+
 - **Date**: Transaction date
 - **Amount**: Transaction amount (income positive, expense negative)
 - **Counterparty**: Other party's name
@@ -195,6 +213,7 @@ docker run -d \
 - **Type**: Income or Expense
 
 **Actions:**
+
 - Click row to view details
 - Sort by any column
 - Filter by date range
@@ -203,11 +222,13 @@ docker run -d \
 ### Configuration Panel
 
 **Settings:**
+
 - **Fio Token**: API token (masked for security)
 - **Back Date Days**: Default history limit
 - **API URL**: Fio Bank API endpoint (rarely changed)
 
 **Actions:**
+
 - Update settings
 - Test connection
 - View current configuration
@@ -222,6 +243,7 @@ docker run -d \
 **Zárazka** (Czech for "stopper" or "checkpoint") is a date marker in Fio Bank that limits how far back the API searches for transactions.
 
 **Purpose:**
+
 - Prevents API timeouts on accounts with large history
 - Reduces data fetched on each request
 - Required for accounts with years of transactions
@@ -230,6 +252,7 @@ docker run -d \
 ### When to Use History Limit
 
 **Use when:**
+
 - ✅ First time setting up FioFetch
 - ✅ Account has years of transaction history
 - ✅ Getting 422 errors from Fio API
@@ -237,6 +260,7 @@ docker run -d \
 - ✅ Want faster fetch times
 
 **Don't use when:**
+
 - ❌ Need complete historical data
 - ❌ Account is new (< 1 year old)
 - ❌ Small number of transactions total
@@ -244,6 +268,7 @@ docker run -d \
 ### How to Set History Limit
 
 **Method 1: Web UI**
+
 1. Go to "Fetch Control" tab
 2. Enter days in "History Limit" field
 3. Click "Set History Limit"
@@ -251,6 +276,7 @@ docker run -d \
 5. Click "Fetch Now" to test
 
 **Method 2: API**
+
 ```bash
 curl -X POST http://localhost:3000/api/v1/set-last-date \
   -H "Content-Type: application/json" \
@@ -258,6 +284,7 @@ curl -X POST http://localhost:3000/api/v1/set-last-date \
 ```
 
 **Method 3: Configuration**
+
 ```yaml
 # config.yaml
 back-date-days: 7
@@ -265,17 +292,18 @@ back-date-days: 7
 
 ### Recommended Settings
 
-| Scenario | Recommended Days | Reason |
-|----------|------------------|--------|
-| First setup | 7-30 days | Safe starting point |
-| Regular use | 3-7 days | Daily/weekly fetching |
-| Monthly check | 30-60 days | Monthly reconciliation |
-| Full history | Don't set | Fetch all available |
-| Troubleshooting | 1-3 days | Minimal data for testing |
+| Scenario        | Recommended Days | Reason                   |
+| --------------- | ---------------- | ------------------------ |
+| First setup     | 7-30 days        | Safe starting point      |
+| Regular use     | 3-7 days         | Daily/weekly fetching    |
+| Monthly check   | 30-60 days       | Monthly reconciliation   |
+| Full history    | Don't set        | Fetch all available      |
+| Troubleshooting | 1-3 days         | Minimal data for testing |
 
 ### Example Workflow
 
 **Initial Setup:**
+
 ```bash
 # 1. Set history limit to 7 days
 curl -X POST http://localhost:3000/api/v1/set-last-date \
@@ -294,6 +322,7 @@ curl -X POST http://localhost:3000/api/v1/fetch
 ### Technical Details
 
 **What happens behind the scenes:**
+
 1. FioFetch calculates target date (today - days_back)
 2. Calls Fio API: `POST /rest/set-last-date/{token}/{date}/`
 3. Fio Bank stores this date as checkpoint
@@ -301,6 +330,7 @@ curl -X POST http://localhost:3000/api/v1/fetch
 5. Zárazka persists until manually changed
 
 **API Rate Limits:**
+
 - Minimum 30 seconds between any Fio API calls
 - Applies to both fetch and set-last-date operations
 - FioFetch enforces this automatically
@@ -312,21 +342,25 @@ curl -X POST http://localhost:3000/api/v1/fetch
 ### Basic Examples
 
 **Get Configuration:**
+
 ```bash
 curl http://localhost:3000/api/v1/config
 ```
 
 **Fetch Transactions:**
+
 ```bash
 curl -X POST http://localhost:3000/api/v1/fetch
 ```
 
 **Get Transactions:**
+
 ```bash
 curl http://localhost:3000/api/v1/transactions?limit=50&offset=0
 ```
 
 **Set History Limit:**
+
 ```bash
 curl -X POST http://localhost:3000/api/v1/set-last-date \
   -H "Content-Type: application/json" \
@@ -334,11 +368,13 @@ curl -X POST http://localhost:3000/api/v1/set-last-date \
 ```
 
 **Export JSON:**
+
 ```bash
 curl http://localhost:3000/api/v1/export/json > transactions.json
 ```
 
 **Export CSV:**
+
 ```bash
 curl http://localhost:3000/api/v1/export/csv > transactions.csv
 ```
@@ -360,11 +396,13 @@ See [API.md](API.md) for complete API reference.
 ### Quick Deploy
 
 **Build and run:**
+
 ```bash
 ./d10_build.sh && ./d20_run.sh
 ```
 
 **With custom settings:**
+
 ```bash
 FIO_FETCH_PORT=8080 FIO_FETCH_TOKEN=your_token ./d20_run.sh
 ```
@@ -372,6 +410,7 @@ FIO_FETCH_PORT=8080 FIO_FETCH_TOKEN=your_token ./d20_run.sh
 ### Container Management
 
 **View logs:**
+
 ```bash
 ./d40_logs.sh
 # or
@@ -379,6 +418,7 @@ docker logs -f fiofetch
 ```
 
 **Stop container:**
+
 ```bash
 ./d30_stop.sh
 # or
@@ -386,11 +426,13 @@ docker stop fiofetch
 ```
 
 **Restart:**
+
 ```bash
 docker restart fiofetch
 ```
 
 **Access shell:**
+
 ```bash
 docker exec -it fiofetch /bin/bash
 ```
@@ -398,19 +440,23 @@ docker exec -it fiofetch /bin/bash
 ### Data Persistence
 
 **Volume Mapping:**
+
 - Host: `~/.config/fio_fetch/`
 - Container: `/root/.config/fio_fetch/`
 
 **Persisted Files:**
+
 - `config.yaml`: Configuration
 - `fio.db`: SQLite database
 
 **Backup:**
+
 ```bash
 cp -r ~/.config/fio_fetch ~/backups/fio_fetch-$(date +%Y%m%d)
 ```
 
 **Restore:**
+
 ```bash
 cp -r ~/backups/fio_fetch-20251130 ~/.config/fio_fetch
 docker restart fiofetch
@@ -419,6 +465,7 @@ docker restart fiofetch
 ### Production Deployment
 
 For production, add:
+
 1. **Reverse proxy** (nginx/traefik) for HTTPS
 2. **Authentication** (OAuth, basic auth, or API keys)
 3. **Monitoring** (logs, health checks)
@@ -434,6 +481,7 @@ See [DOCKER.md](../DOCKER.md) for complete deployment guide.
 ### Database Schema
 
 **Transactions Table:**
+
 ```sql
 CREATE TABLE transactions (
     id INTEGER PRIMARY KEY,
@@ -453,17 +501,20 @@ CREATE TABLE transactions (
 ### Backup Strategies
 
 **Method 1: File Backup**
+
 ```bash
 # Backup database file
 cp ~/.config/fio_fetch/fio.db ~/backups/fio.db.$(date +%Y%m%d)
 ```
 
 **Method 2: SQL Dump**
+
 ```bash
 sqlite3 ~/.config/fio_fetch/fio.db .dump > backup.sql
 ```
 
 **Method 3: Export API**
+
 ```bash
 curl http://localhost:3000/api/v1/export/json > transactions-backup.json
 ```
@@ -471,6 +522,7 @@ curl http://localhost:3000/api/v1/export/json > transactions-backup.json
 ### Data Import
 
 **From Backup:**
+
 ```bash
 # Stop FioFetch
 docker stop fiofetch
@@ -483,6 +535,7 @@ docker start fiofetch
 ```
 
 **From SQL Dump:**
+
 ```bash
 sqlite3 ~/.config/fio_fetch/fio.db < backup.sql
 ```
@@ -490,16 +543,19 @@ sqlite3 ~/.config/fio_fetch/fio.db < backup.sql
 ### Database Maintenance
 
 **Check database size:**
+
 ```bash
 ls -lh ~/.config/fio_fetch/fio.db
 ```
 
 **Vacuum database:**
+
 ```bash
 sqlite3 ~/.config/fio_fetch/fio.db "VACUUM;"
 ```
 
 **Count transactions:**
+
 ```bash
 sqlite3 ~/.config/fio_fetch/fio.db "SELECT COUNT(*) FROM transactions;"
 ```
@@ -513,31 +569,36 @@ sqlite3 ~/.config/fio_fetch/fio.db "SELECT COUNT(*) FROM transactions;"
 **Cannot fetch transactions:**
 
 **Problem:** 401 Unauthorized
-**Solution:** 
+**Solution:**
+
 - Verify Fio token is correct
 - Regenerate token in Fio Bank
 - Update token in configuration
 
 **Problem:** 422 Unprocessable Entity
 **Solution:**
+
 - Set history limit to smaller value
 - Start with 7 days
 - Gradually increase if needed
 
 **Problem:** 429 Too Many Requests
 **Solution:**
+
 - Wait 30 seconds between requests
 - Check for multiple instances running
 - Fio Bank enforces strict rate limits
 
 **Problem:** 503 Service Unavailable
 **Solution:**
+
 - Check internet connection
 - Verify Fio Bank API is accessible
 - Check firewall/proxy settings
 
 **Problem:** 504 Gateway Timeout
 **Solution:**
+
 - Use history limit to reduce data
 - Try fetching smaller date ranges
 - Check for network issues
@@ -545,6 +606,7 @@ sqlite3 ~/.config/fio_fetch/fio.db "SELECT COUNT(*) FROM transactions;"
 ### Docker-Specific Issues
 
 **Container won't start:**
+
 ```bash
 # Check logs
 docker logs fiofetch
@@ -556,12 +618,14 @@ docker logs fiofetch
 ```
 
 **Port conflict:**
+
 ```bash
 # Use different port
 FIO_FETCH_PORT=8080 ./d20_run.sh
 ```
 
 **Permission denied:**
+
 ```bash
 # Fix volume permissions
 chmod -R 755 ~/.config/fio_fetch
@@ -570,6 +634,7 @@ chmod -R 755 ~/.config/fio_fetch
 ### Database Issues
 
 **Database locked:**
+
 ```bash
 # Stop all FioFetch instances
 docker stop fiofetch
@@ -578,6 +643,7 @@ docker start fiofetch
 ```
 
 **Corrupted database:**
+
 ```bash
 # Restore from backup
 cp ~/backups/fio.db.20251130 ~/.config/fio_fetch/fio.db
@@ -587,11 +653,13 @@ docker restart fiofetch
 ### API Issues
 
 **Connection refused:**
+
 - Verify FioFetch is running: `docker ps | grep fiofetch`
 - Check port mapping: `docker port fiofetch`
 - Test endpoint: `curl http://localhost:3000/`
 
 **Slow responses:**
+
 - Check database size
 - Run VACUUM on database
 - Check system resources
@@ -613,6 +681,7 @@ docker run -d \
 ```
 
 View logs:
+
 ```bash
 docker logs -f fiofetch
 ```
@@ -622,18 +691,21 @@ docker logs -f fiofetch
 ## Security Best Practices
 
 1. **Token Security:**
+
    - Keep token private
    - Use read-only token
    - Rotate regularly
    - Never commit to git
 
 2. **Network Security:**
+
    - Use HTTPS in production
    - Add authentication layer
    - Limit network access
    - Use firewall rules
 
 3. **Data Security:**
+
    - Encrypt database backups
    - Secure file permissions
    - Regular backups
@@ -652,12 +724,14 @@ docker logs -f fiofetch
 ### Automated Fetching
 
 **Using cron:**
+
 ```bash
 # Add to crontab
 0 * * * * curl -X POST http://localhost:3000/api/v1/fetch
 ```
 
 **Using systemd timer:**
+
 ```ini
 # /etc/systemd/system/fiofetch.timer
 [Unit]
@@ -674,6 +748,7 @@ WantedBy=timers.target
 ### Custom Scripts
 
 **Python:**
+
 ```python
 import requests
 
@@ -692,6 +767,7 @@ for tx in transactions["transactions"]:
 ```
 
 **Bash:**
+
 ```bash
 #!/bin/bash
 # fetch-and-backup.sh
@@ -712,14 +788,15 @@ echo "Backup completed"
 ### WebSocket Integration
 
 **JavaScript:**
-```javascript
-const ws = new WebSocket('ws://localhost:3000/ws');
 
-ws.onopen = () => console.log('Connected');
+```javascript
+const ws = new WebSocket("ws://localhost:3000/ws");
+
+ws.onopen = () => console.log("Connected");
 
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
-  if (data.type === 'fetch_completed') {
+  if (data.type === "fetch_completed") {
     console.log(`Fetched ${data.count} transactions`);
   }
 };
@@ -739,4 +816,3 @@ ws.onmessage = (event) => {
 ---
 
 **For additional help, see the documentation or check the GitHub repository.**
-

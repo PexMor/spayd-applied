@@ -97,16 +97,16 @@ export function PeopleDataManager({ data, onDataChange }: PeopleDataManagerProps
     };
 
     const loadDemoData = () => {
-        // Demo data: FirstName, SecondName, Email, KS
+        // Demo data: FirstName, SecondName, Email, SS
         // VS will be auto-generated from row index
-        // KS demonstrates loading constant symbols from CSV
-        const demoHeaders = ['FirstName', 'SecondName', 'Email', 'KS'];
+        // SS demonstrates loading specific symbols from CSV
+        const demoHeaders = ['FirstName', 'SecondName', 'Email', 'SS'];
         const demoRows = [
-            ['John', 'Doe', 'john.doe@example.com', '0308'],
-            ['Jane', 'Smith', 'jane.smith@example.com', '0558'],
-            ['Bob', 'Johnson', 'bob.johnson@example.com', '0308'],
-            ['Alice', 'Brown', 'alice.brown@example.com', '0008'],
-            ['Charlie', 'Wilson', 'charlie.wilson@example.com', '0308'],
+            ['John', 'Doe', 'john.doe@example.com', '250101'],
+            ['Jane', 'Smith', 'jane.smith@example.com', '250102'],
+            ['Bob', 'Johnson', 'bob.johnson@example.com', '250103'],
+            ['Alice', 'Brown', 'alice.brown@example.com', '250104'],
+            ['Charlie', 'Wilson', 'charlie.wilson@example.com', '250105'],
         ];
         processData([demoHeaders, ...demoRows]);
     };

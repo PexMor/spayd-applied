@@ -24,6 +24,7 @@ The SPAYD QR Generator creates standard Czech QR payment codes that work with al
 
 1. **Open the application** in your web browser
 2. **Add your bank account(s):**
+
    - Click the hamburger menu (☰)
    - Select "Accounts"
    - Click "Add Account"
@@ -45,6 +46,7 @@ The SPAYD QR Generator creates standard Czech QR payment codes that work with al
 <img src="../imgs/generate.png" alt="Main screen" height="400"/>
 
 **Steps:**
+
 1. Select a bank account from dropdown
 2. Choose an event (optional) or leave as "Select Event"
 3. Enter the payment amount
@@ -69,6 +71,7 @@ The SPAYD QR Generator creates standard Czech QR payment codes that work with al
 <img src="../imgs/accounts.png" alt="Accounts" height="400"/>
 
 **Actions:**
+
 - **Add Account**: Click "Add Account" button
   - Name: Friendly name (e.g., "My Savings")
   - IBAN: Account number (CZ format validated)
@@ -77,6 +80,7 @@ The SPAYD QR Generator creates standard Czech QR payment codes that work with al
 - **Delete Account**: Click trash icon (confirmation required)
 
 **Tips:**
+
 - Add multiple accounts for different purposes
 - Use descriptive names for easy selection
 - Cannot delete account if used in events
@@ -90,6 +94,7 @@ The SPAYD QR Generator creates standard Czech QR payment codes that work with al
 Events are payment templates for recurring transactions.
 
 **Actions:**
+
 - **Add Event**: Click "Add Event" button
   - Name: Event description (e.g., "Lunch with friends")
   - Account: Select target account
@@ -98,6 +103,7 @@ Events are payment templates for recurring transactions.
 - **Delete Event**: Click trash icon
 
 **Use Cases:**
+
 - Regular group expenses (lunches, dinners)
 - Recurring payments (rent, utilities)
 - Event-specific collections (trips, gifts)
@@ -111,6 +117,7 @@ Events are payment templates for recurring transactions.
 View all previously generated QR payments.
 
 **Features:**
+
 - Chronological list (newest first)
 - Shows: date, account, amount, VS, message
 - Search/filter capabilities
@@ -119,6 +126,7 @@ View all previously generated QR payments.
 - Export history to JSON
 
 **Actions:**
+
 - **View Details**: Click on payment entry
 - **Clear History**: Click "Clear All" (confirmation required)
 - **Export**: Click "Export" to download JSON file
@@ -132,12 +140,14 @@ View all previously generated QR payments.
 Monitor webhook sync status (if configured).
 
 **Status Types:**
+
 - **Pending**: Waiting to sync
 - **In Progress**: Currently syncing
 - **Success**: Successfully synced
 - **Failed**: Sync error (retry available)
 
 **Actions:**
+
 - **Retry Failed**: Click retry icon
 - **Clear Queue**: Remove synced items
 
@@ -148,18 +158,21 @@ Monitor webhook sync status (if configured).
 <img src="../imgs/global-config.png" alt="Global config" height="400"/>
 
 **Available Settings:**
+
 - **Webhook URL**: External sync endpoint (optional)
 - **Language**: Czech (CS) or English (EN)
 - **Auto-sync**: Enable/disable automatic sync
 - **Default Currency**: CZK, EUR, USD, etc.
 
 **Import/Export Settings:**
+
 - Export: Download all settings and data as JSON
 - Import: Restore from backup file
 
 ### Language Support
 
 Switch between Czech and English:
+
 1. Click language switcher (CS/EN) in top bar
 2. All UI text updates immediately
 3. Language preference saved
@@ -167,11 +180,13 @@ Switch between Czech and English:
 ### Offline Mode
 
 **The app works completely offline:**
+
 - All data stored locally (IndexedDB)
 - No internet required for QR generation
 - Sync features require connection
 
 **Data Storage:**
+
 - Accounts, events, history stored in browser
 - Data persists across sessions
 - Private browsing mode: data cleared on close
@@ -187,18 +202,21 @@ Switch between Czech and English:
 ### Troubleshooting
 
 **QR Code Won't Scan:**
+
 - Ensure IBAN is valid (CZ format)
 - Check amount is positive number
 - Verify VS is numeric (if used)
 - Try increasing screen brightness
 
 **Data Not Saving:**
+
 - Check browser storage settings
 - Ensure cookies/storage enabled
 - Try clearing browser cache
 - Use latest browser version
 
 **Sync Failing:**
+
 - Verify webhook URL is correct
 - Check internet connection
 - Review sync queue for errors
@@ -229,18 +247,21 @@ Generate multiple payment requests with email notifications. Perfect for event o
 #### 1. People Data Management
 
 **Import from Excel/CSV:**
+
 1. Click "Import Data"
 2. Select Excel or CSV file
 3. Map columns: Name, Email, Amount, Variable Symbol
 4. Preview and confirm import
 
 **Required Columns:**
+
 - **Name**: Full name or identifier
 - **Email**: Valid email address
 - **Amount**: Payment amount (numeric)
 - **Variable Symbol**: Unique identifier (auto-generated if empty)
 
 **Manual Entry:**
+
 1. Click "Add Person"
 2. Fill in form fields
 3. Click "Save"
@@ -250,6 +271,7 @@ Generate multiple payment requests with email notifications. Perfect for event o
 Similar to main app but uses separate storage.
 
 **Setup:**
+
 1. Add bank accounts
 2. Create events for the batch
 3. Select event for batch processing
@@ -266,6 +288,7 @@ Similar to main app but uses separate storage.
 #### 4. Email Preview
 
 **Features:**
+
 - Live preview of email content
 - Personalized for each recipient
 - Includes embedded QR code
@@ -273,6 +296,7 @@ Similar to main app but uses separate storage.
 - Contact information
 
 **Customization:**
+
 - Edit email template
 - Add custom messages
 - Include additional instructions
@@ -281,12 +305,14 @@ Similar to main app but uses separate storage.
 #### 5. Export Batch
 
 **Export Package Includes:**
+
 - Individual HTML email files
 - QR code PNG images
 - Text file versions
 - Index/summary file
 
 **Export Options:**
+
 - **ZIP Download**: All files in one archive
 - **Individual Files**: Download separately
 - **Email Service Format**: Compatible with mail merge tools
@@ -333,6 +359,7 @@ See [DOCKER.md](../DOCKER.md) for complete guide.
 #### Option 2: Local Development
 
 **Backend:**
+
 ```bash
 cd fio_fetch_py
 uv sync
@@ -340,6 +367,7 @@ fiofetch --fio-token YOUR_TOKEN
 ```
 
 **Frontend:**
+
 ```bash
 cd fio_fetch_webui
 yarn install
@@ -351,6 +379,7 @@ yarn dev
 #### 1. Dashboard
 
 **Overview:**
+
 - Account balance
 - Recent transactions count
 - Last fetch timestamp
@@ -359,12 +388,14 @@ yarn dev
 #### 2. Transaction List
 
 **Features:**
+
 - Paginated table view
 - Sortable columns
 - Search/filter
 - Export to JSON/CSV
 
 **Columns:**
+
 - Date
 - Amount
 - Counterparty
@@ -375,18 +406,21 @@ yarn dev
 #### 3. Fetch Controls
 
 **Manual Fetch:**
+
 1. Click "Fetch Now"
 2. Transactions downloaded from Fio API
 3. Stored in local database
 4. View in transaction list
 
 **Set History Limit:**
+
 - Prevents 422 errors from Fio API
 - Set "zárazka" (checkpoint) date
 - Example: Set to 3 days = only fetch last 3 days
 - Useful for initial setup or large accounts
 
 **Steps:**
+
 1. Enter number of days (1-365)
 2. Click "Set History Limit"
 3. Confirmation message shown
@@ -395,14 +429,17 @@ yarn dev
 #### 4. Configuration
 
 **Required Settings:**
+
 - **Fio Token**: API token from Fio Bank
 - **Back Date Days**: Default history limit (optional)
 
 **Optional Settings:**
+
 - **Auto-fetch**: Enable periodic fetching
 - **Fetch Interval**: How often to fetch (minutes)
 
 **Get Fio Token:**
+
 1. Log in to Fio Bank internet banking
 2. Navigate to API settings
 3. Generate read-only token
@@ -411,11 +448,13 @@ yarn dev
 #### 5. Data Export
 
 **Export Formats:**
+
 - **JSON**: Raw transaction data
 - **CSV**: Spreadsheet-compatible
 - **Excel**: XLSX format (planned)
 
 **Export Steps:**
+
 1. Go to Transaction List
 2. Apply filters if needed
 3. Click "Export"
@@ -425,23 +464,27 @@ yarn dev
 ### Understanding History Limit (Zárazka)
 
 **What is it?**
+
 - Checkpoint date in Fio Bank system
 - Tells API: "Don't search before this date"
 - Prevents timeouts on large transaction histories
 
 **When to use:**
+
 - Initial setup (first time fetching)
 - Large account with years of history
 - Getting 422 errors from API
 - Want to limit data fetched
 
 **How to set:**
+
 1. Decide how far back to fetch (e.g., 30 days)
 2. Enter days in "Set History Limit"
 3. Click submit
 4. Run "Fetch Now"
 
 **Example:**
+
 - Today: 2025-11-30
 - Set history limit: 7 days
 - Result: Only fetch transactions from 2025-11-23 onwards
@@ -449,11 +492,13 @@ yarn dev
 ### API Rate Limits
 
 **Fio Bank Restrictions:**
+
 - Minimum 30 seconds between requests
 - Max 1 request per 30 seconds
 - Daily limits may apply
 
 **FioFetch Handling:**
+
 - Automatic rate limiting
 - Queue system for requests
 - Error messages if limit exceeded
@@ -461,22 +506,26 @@ yarn dev
 ### Troubleshooting
 
 **Cannot Fetch Transactions:**
+
 - Verify Fio token is valid
 - Check internet connection
 - Wait 30 seconds between fetches
 - Try setting history limit
 
 **422 Error:**
+
 - Too much history to fetch at once
 - Solution: Set history limit to smaller value
 - Start with 7 days, increase gradually
 
 **Connection Timeout:**
+
 - Check Fio API status
 - Verify network allows HTTPS requests
 - Try again in a few minutes
 
 **No Transactions Shown:**
+
 - Check date range filters
 - Verify account has transactions
 - Try manual fetch
@@ -485,6 +534,7 @@ yarn dev
 ### Docker Specific
 
 **Container Management:**
+
 ```bash
 # View logs
 ./d40_logs.sh
@@ -500,11 +550,13 @@ docker ps | grep fiofetch
 ```
 
 **Data Location:**
+
 - Config: `~/.config/fio_fetch/config.yaml`
 - Database: `~/.config/fio_fetch/fio.db`
 - Logs: `docker logs fiofetch`
 
 **Backup:**
+
 ```bash
 # Backup data
 cp -r ~/.config/fio_fetch ~/backups/fio_fetch-$(date +%Y%m%d)
@@ -521,16 +573,19 @@ cp -r ~/.config/fio_fetch ~/backups/fio_fetch-$(date +%Y%m%d)
 ### Advanced Usage
 
 **API Access:**
+
 - REST API: `http://localhost:3000/api/v1/*`
 - Swagger Docs: `http://localhost:3000/docs`
 - ReDoc: `http://localhost:3000/redoc`
 
 **WebSocket:**
+
 - Real-time updates: `ws://localhost:3000/ws`
 - Transaction notifications
 - Status updates
 
 **Custom Deployment:**
+
 - See [DOCKER.md](../DOCKER.md) for production deployment
 - Configure reverse proxy for HTTPS
 - Add authentication layer if exposed to internet
@@ -540,22 +595,27 @@ cp -r ~/.config/fio_fetch ~/backups/fio_fetch-$(date +%Y%m%d)
 ## Support & Resources
 
 ### Documentation
+
 - [Architecture Guide](../AGENTS.md) - Technical details
 - [Docker Guide](../DOCKER.md) - Complete Docker documentation
 - [API Reference](API.md) - REST API documentation
 - [Development Guide](DEVELOPMENT.md) - Setup and contribution
 
 ### Common Issues
+
 See [Troubleshooting](#troubleshooting) sections above for each component.
 
 ### Getting Help
+
 1. Check relevant documentation
 2. Review error messages carefully
 3. Test with demo data (FioFetch)
 4. Check GitHub issues
 
 ### Reporting Issues
+
 When reporting issues, include:
+
 - Application component (main app, batch, FioFetch)
 - Browser/OS version
 - Steps to reproduce
@@ -565,4 +625,3 @@ When reporting issues, include:
 ---
 
 **Happy payment processing! 💰**
-
