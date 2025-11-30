@@ -251,7 +251,7 @@ export async function generateBatchZip(data: BatchData, config: BatchConfig, t: 
                 am: split.amount.toFixed(2),
                 cc: config.account.currency,
                 xvs: symbolToNumber(vs),  // Convert to number
-                msg: event.description || 'Payment',
+                msg: event.description || t.paymentFallback,
             };
 
             // Only include SS if provided and valid numeric

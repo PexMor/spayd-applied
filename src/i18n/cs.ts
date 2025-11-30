@@ -323,6 +323,63 @@ export const cs = {
   emailDueDate: 'Datum Splatnosti',
   emailConstantSymbol: 'Konstantní Symbol',
   emailSpecificSymbol: 'Specifický Symbol',
+  
+  // Batch Account Manager
+  logoUrl: 'Logo URL (Volitelné)',
+  logoUrlPlaceholder: 'https://priklad.cz/logo.png',
+  
+  // Batch Event Manager - Validation Messages
+  vsPrefixNumericOnly: 'VS prefix musí být pouze číslice',
+  ksMust4DigitsOrLess: 'KS musí mít nejvýše 4 číslice',
+  ssPrefixNumericOnly: 'SS prefix musí být pouze číslice',
+  
+  // Batch Event Manager - Symbol Configuration Headers
+  globalConfigForAllSplits: '🗒️ Globální Konfigurace pro Všechny Rozdělení',
+  globalConfigDescription: 'Nastavte <strong>výchozí prefix</strong> a <strong>délku suffixu</strong> zde. Tyto hodnoty se vztahují na všechny rozdělení plateb. Jednotlivá rozdělení mohou podle potřeby přepsat prefix (viz nastavení rozdělení níže).',
+  
+  // Variable Symbol Configuration
+  vsRequired: 'Variabilní Symbol (VS) - Povinný',
+  vsPrefixLabel: 'VS Prefix (pouze číslice, výchozí pro všechny rozdělení)',
+  vsPrefixDefault: 'např. 2025',
+  vsPrefixHelp: 'Výchozí prefix (lze přepsat u jednotlivých rozdělení)',
+  vsSuffixLengthLabel: 'VS Délka Suffixu (globální pro všechny rozdělení)',
+  vsSuffixLengthPlaceholder: '6',
+  vsSuffixLengthHelp: 'Doplnění (6→000001). Použijte 0 pro žádné doplnění. Suffix: VS sloupec nebo číslo řádku',
+  
+  // Specific Symbol Configuration
+  ssOptionalLabel: 'Specifický Symbol (SS) - Volitelný',
+  ssPrefixLabel: 'SS Prefix (pouze číslice, výchozí pro všechny rozdělení)',
+  ssPrefixDefault: 'např. 12345 (volitelné)',
+  ssPrefixHelpText: 'Výchozí prefix. SS se sestaví pouze pokud data lidí obsahují sloupec SS',
+  ssSuffixLengthLabel: 'SS Délka Suffixu (globální pro všechny rozdělení)',
+  ssSuffixLengthPlaceholder: '6',
+  ssSuffixLengthHelp: 'Doplnění (6→000001). Použijte 0 pro žádné doplnění. Suffix ze sloupce SS',
+  
+  // Constant Symbol Configuration
+  ksOptionalLabel: 'Konstantní Symbol (KS) - Volitelný',
+  ksPrefixLabel: 'KS Prefix (pouze číslice, výchozí pro všechny rozdělení)',
+  ksPrefixDefault: 'např. 0308 (volitelné)',
+  ksPrefixHelpText: 'Výchozí prefix. KS se sestaví pouze pokud data lidí obsahují sloupec KS',
+  ksSuffixLengthLabel: 'KS Délka Suffixu (globální pro všechny rozdělení)',
+  ksSuffixLengthPlaceholder: '4',
+  ksSuffixLengthHelp: 'Doplnění (2→08). Použijte 0 pro žádné doplnění, hodnota beze změny ze sloupce KS',
+  
+  // Split Overrides
+  amountCzk: 'Částka (CZK)',
+  splitOverridesOptional: 'ℹ️ Přepsání pro Rozdělení (Volitelné):',
+  splitOverridesDescription: 'Přepište hodnoty prefixu níže, pokud toto rozdělení potřebuje jiné hodnoty. Délka suffixu vždy pochází z konfigurace události výše.',
+  vsPrefixOverride: 'VS Prefix Přepsání',
+  vsPrefixOverridePlaceholder: 'např. 771 (pouze číslice)',
+  vsPrefixOverrideHelp: 'Přepsat prefix VS události pouze pro toto rozdělení',
+  ssPrefixOverride: 'SS Prefix Přepsání',
+  ssPrefixOverridePlaceholder: 'např. 12345 (volitelné)',
+  ssPrefixOverrideHelp: 'Přepsat prefix SS události pouze pro toto rozdělení',
+  ksPrefixOverride: 'KS Prefix Přepsání',
+  ksPrefixOverridePlaceholder: 'např. 0308 (volitelné)',
+  ksPrefixOverrideHelp: 'Přepsat prefix KS události pouze pro toto rozdělení',
+  
+  // Payment fallback
+  paymentFallback: 'Platba',
 };
 
 export type TranslationKeys = typeof cs;

@@ -104,32 +104,32 @@ export function BatchEventManager({
             }
             // Validate VS prefix is numeric only
             if (split.vsPrefix && !/^\d*$/.test(split.vsPrefix)) {
-                alert(`${t.split} ${i + 1}: VS prefix must be numeric only`);
+                alert(`${t.split} ${i + 1}: ${t.vsPrefixNumericOnly}`);
                 return;
             }
             // Validate KS prefix is numeric only (and 4 digits if provided)
             if (split.ksPrefix && !/^\d{0,4}$/.test(split.ksPrefix)) {
-                alert(`${t.split} ${i + 1}: KS must be 4 digits or less`);
+                alert(`${t.split} ${i + 1}: ${t.ksMust4DigitsOrLess}`);
                 return;
             }
             // Validate SS prefix is numeric only
             if (split.ssPrefix && !/^\d*$/.test(split.ssPrefix)) {
-                alert(`${t.split} ${i + 1}: SS prefix must be numeric only`);
+                alert(`${t.split} ${i + 1}: ${t.ssPrefixNumericOnly}`);
                 return;
             }
         }
         
         // Validate event-level prefixes
         if (editEvent.vsPrefix && !/^\d*$/.test(editEvent.vsPrefix)) {
-            alert('VS prefix must be numeric only');
+            alert(t.vsPrefixNumericOnly);
             return;
         }
         if (editEvent.ksPrefix && !/^\d{0,4}$/.test(editEvent.ksPrefix)) {
-            alert('KS must be 4 digits or less');
+            alert(t.ksMust4DigitsOrLess);
             return;
         }
         if (editEvent.ssPrefix && !/^\d*$/.test(editEvent.ssPrefix)) {
-            alert('SS prefix must be numeric only');
+            alert(t.ssPrefixNumericOnly);
             return;
         }
 
@@ -230,29 +230,26 @@ export function BatchEventManager({
                     {/* Symbol Configuration */}
                     <div className="border border-blue-200 rounded-lg p-3 bg-blue-50/30 space-y-3">
                         <div className="bg-blue-100 border border-blue-300 rounded p-2 mb-2">
-                            <p className="text-xs text-blue-800 font-medium">ℹ️ Global Configuration for All Splits</p>
-                            <p className="text-xs text-blue-700 mt-1">
-                                Set <strong>default prefix</strong> and <strong>suffix length</strong> here. These apply to all splits.
-                                Individual splits can override the prefix if needed (see split settings below).
-                            </p>
+                            <p className="text-xs text-blue-800 font-medium">{t.globalConfigForAllSplits}</p>
+                            <p className="text-xs text-blue-700 mt-1" dangerouslySetInnerHTML={{ __html: t.globalConfigDescription }}></p>
                         </div>
 
-                        <h4 className="text-sm font-semibold text-blue-900">Variable Symbol (VS) - Required</h4>
+                        <h4 className="text-sm font-semibold text-blue-900">{t.vsRequired}</h4>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="block text-xs text-blue-700">VS Prefix (digits only, default for all splits)</label>
+                                <label className="block text-xs text-blue-700">{t.vsPrefixLabel}</label>
                                 <input
                                     type="text"
                                     value={editEvent.vsPrefix}
                                     onInput={(e) => setEditEvent({ ...editEvent, vsPrefix: (e.target as HTMLInputElement).value })}
                                     className="mt-1 block w-full rounded border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm border p-1.5"
-                                    placeholder="e.g., 2025"
+                                    placeholder={t.vsPrefixDefault}
                                 />
-                                <p className="text-xs text-gray-500 mt-0.5">Default prefix (can override per split)</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{t.vsPrefixHelp}</p>
                             </div>
                             {editEvent.vsPrefix && (
                                 <div>
-                                    <label className="block text-xs text-blue-700">VS Suffix Length (global for all splits)</label>
+                                    <label className="block text-xs text-blue-700">{t.vsSuffixLengthLabel}</label>
                                     <input
                                         type="number"
                                         min="0"
@@ -260,28 +257,28 @@ export function BatchEventManager({
                                         value={editEvent.vsSuffixLength}
                                         onInput={(e) => setEditEvent({ ...editEvent, vsSuffixLength: parseInt((e.target as HTMLInputElement).value) || 6 })}
                                         className="mt-1 block w-full rounded border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm border p-1.5"
-                                        placeholder="6"
+                                        placeholder={t.vsSuffixLengthPlaceholder}
                                     />
-                                    <p className="text-xs text-gray-500 mt-0.5">Padding (6→000001). Use 0=no padding. Suffix: VS column or row #</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">{t.vsSuffixLengthHelp}</p>
                                 </div>
                             )}
                         </div>
                         
-                        <h4 className="text-sm font-semibold text-blue-900 pt-2">Specific Symbol (SS) - Optional</h4>
+                        <h4 className="text-sm font-semibold text-blue-900 pt-2">{t.ssOptionalLabel}</h4>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="block text-xs text-blue-700">SS Prefix (digits only, default for all splits)</label>
+                                <label className="block text-xs text-blue-700">{t.ssPrefixLabel}</label>
                                 <input
                                     type="text"
                                     value={editEvent.ssPrefix || ''}
                                     onInput={(e) => setEditEvent({ ...editEvent, ssPrefix: (e.target as HTMLInputElement).value })}
                                     className="mt-1 block w-full rounded border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm border p-1.5"
-                                    placeholder="e.g., 12345 (optional)"
+                                    placeholder={t.ssPrefixDefault}
                                 />
-                                <p className="text-xs text-gray-500 mt-0.5">Default prefix. SS composed only if people data has SS column</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{t.ssPrefixHelpText}</p>
                             </div>
                             <div>
-                                <label className="block text-xs text-blue-700">SS Suffix Length (global for all splits)</label>
+                                <label className="block text-xs text-blue-700">{t.ssSuffixLengthLabel}</label>
                                 <input
                                     type="number"
                                     min="0"
@@ -289,28 +286,28 @@ export function BatchEventManager({
                                     value={editEvent.ssSuffixLength !== undefined ? editEvent.ssSuffixLength : 6}
                                     onInput={(e) => setEditEvent({ ...editEvent, ssSuffixLength: parseInt((e.target as HTMLInputElement).value) || 6 })}
                                     className="mt-1 block w-full rounded border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm border p-1.5"
-                                    placeholder="6"
+                                    placeholder={t.ssSuffixLengthPlaceholder}
                                 />
-                                <p className="text-xs text-gray-500 mt-0.5">Padding (6→000001). Use 0=no padding. Suffix from SS column</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{t.ssSuffixLengthHelp}</p>
                             </div>
                         </div>
                         
-                        <h4 className="text-sm font-semibold text-blue-900 pt-2">Constant Symbol (KS) - Optional</h4>
+                        <h4 className="text-sm font-semibold text-blue-900 pt-2">{t.ksOptionalLabel}</h4>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="block text-xs text-blue-700">KS Prefix (digits only, default for all splits)</label>
+                                <label className="block text-xs text-blue-700">{t.ksPrefixLabel}</label>
                                 <input
                                     type="text"
                                     value={editEvent.ksPrefix || ''}
                                     onInput={(e) => setEditEvent({ ...editEvent, ksPrefix: (e.target as HTMLInputElement).value })}
                                     className="mt-1 block w-full rounded border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm border p-1.5"
-                                    placeholder="e.g., 0308 (optional)"
+                                    placeholder={t.ksPrefixDefault}
                                     maxLength={4}
                                 />
-                                <p className="text-xs text-gray-500 mt-0.5">Default prefix. KS composed only if people data has KS column</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{t.ksPrefixHelpText}</p>
                             </div>
                             <div>
-                                <label className="block text-xs text-blue-700">KS Suffix Length (global for all splits)</label>
+                                <label className="block text-xs text-blue-700">{t.ksSuffixLengthLabel}</label>
                                 <input
                                     type="number"
                                     min="0"
@@ -318,9 +315,9 @@ export function BatchEventManager({
                                     value={editEvent.ksSuffixLength !== undefined ? editEvent.ksSuffixLength : 4}
                                     onInput={(e) => setEditEvent({ ...editEvent, ksSuffixLength: parseInt((e.target as HTMLInputElement).value) })}
                                     className="mt-1 block w-full rounded border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm border p-1.5"
-                                    placeholder="4"
+                                    placeholder={t.ksSuffixLengthPlaceholder}
                                 />
-                                <p className="text-xs text-gray-500 mt-0.5">Padding (2→08). Use 0=no padding, value as-is from KS column</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{t.ksSuffixLengthHelp}</p>
                             </div>
                         </div>
                     </div>
@@ -351,7 +348,7 @@ export function BatchEventManager({
                                 </div>
                                 <div className="grid grid-cols-3 gap-2">
                                     <div>
-                                        <label className="block text-xs text-green-700">{t.amount} (CZK)</label>
+                                        <label className="block text-xs text-green-700">{t.amountCzk}</label>
                                         <input
                                             type="number"
                                             value={split.amount}
@@ -370,43 +367,42 @@ export function BatchEventManager({
                                     </div>
                                     <div className="col-span-3 bg-green-50 border border-green-200 rounded p-2 mb-2">
                                         <p className="text-xs text-green-800">
-                                            <strong>ℹ️ Split Overrides (Optional):</strong> Override prefix values below if this split needs different values.
-                                            Suffix length always comes from event configuration above.
+                                            <strong>{t.splitOverridesOptional}</strong> {t.splitOverridesDescription}
                                         </p>
                                     </div>
                                     <div>
-                                        <label className="block text-xs text-green-700">VS Prefix Override</label>
+                                        <label className="block text-xs text-green-700">{t.vsPrefixOverride}</label>
                                         <input
                                             type="text"
                                             value={split.vsPrefix || ''}
                                             onInput={(e) => updateSplit(index, 'vsPrefix', (e.target as HTMLInputElement).value)}
                                             className="mt-1 block w-full rounded border-green-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm border p-1.5"
-                                            placeholder="e.g., 771 (digits only)"
+                                            placeholder={t.vsPrefixOverridePlaceholder}
                                         />
-                                        <p className="text-xs text-gray-500 mt-0.5">Override event VS prefix for this split only</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">{t.vsPrefixOverrideHelp}</p>
                                     </div>
                                     <div>
-                                        <label className="block text-xs text-green-700">SS Prefix Override</label>
+                                        <label className="block text-xs text-green-700">{t.ssPrefixOverride}</label>
                                         <input
                                             type="text"
                                             value={split.ssPrefix || ''}
                                             onInput={(e) => updateSplit(index, 'ssPrefix', (e.target as HTMLInputElement).value)}
                                             className="mt-1 block w-full rounded border-green-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm border p-1.5"
-                                            placeholder="e.g., 12345 (optional)"
+                                            placeholder={t.ssPrefixOverridePlaceholder}
                                         />
-                                        <p className="text-xs text-gray-500 mt-0.5">Override event SS prefix for this split only</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">{t.ssPrefixOverrideHelp}</p>
                                     </div>
                                     <div>
-                                        <label className="block text-xs text-green-700">KS Prefix Override</label>
+                                        <label className="block text-xs text-green-700">{t.ksPrefixOverride}</label>
                                         <input
                                             type="text"
                                             value={split.ksPrefix || ''}
                                             onInput={(e) => updateSplit(index, 'ksPrefix', (e.target as HTMLInputElement).value)}
                                             className="mt-1 block w-full rounded border-green-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm border p-1.5"
-                                            placeholder="e.g., 0308 (optional)"
+                                            placeholder={t.ksPrefixOverridePlaceholder}
                                             maxLength={4}
                                         />
-                                        <p className="text-xs text-gray-500 mt-0.5">Override event KS prefix for this split only</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">{t.ksPrefixOverrideHelp}</p>
                                     </div>
                                 </div>
                             </div>

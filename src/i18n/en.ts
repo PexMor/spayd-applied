@@ -324,4 +324,61 @@ export const en: TranslationKeys = {
   emailDueDate: 'Due Date',
   emailConstantSymbol: 'Constant Symbol',
   emailSpecificSymbol: 'Specific Symbol',
+  
+  // Batch Account Manager
+  logoUrl: 'Logo URL (Optional)',
+  logoUrlPlaceholder: 'https://example.com/logo.png',
+  
+  // Batch Event Manager - Validation Messages
+  vsPrefixNumericOnly: 'VS prefix must be numeric only',
+  ksMust4DigitsOrLess: 'KS must be 4 digits or less',
+  ssPrefixNumericOnly: 'SS prefix must be numeric only',
+  
+  // Batch Event Manager - Symbol Configuration Headers
+  globalConfigForAllSplits: '🗒️ Global Configuration for All Splits',
+  globalConfigDescription: 'Set <strong>default prefix</strong> and <strong>suffix length</strong> here. These apply to all splits. Individual splits can override the prefix if needed (see split settings below).',
+  
+  // Variable Symbol Configuration
+  vsRequired: 'Variable Symbol (VS) - Required',
+  vsPrefixLabel: 'VS Prefix (digits only, default for all splits)',
+  vsPrefixDefault: 'e.g., 2025',
+  vsPrefixHelp: 'Default prefix (can override per split)',
+  vsSuffixLengthLabel: 'VS Suffix Length (global for all splits)',
+  vsSuffixLengthPlaceholder: '6',
+  vsSuffixLengthHelp: 'Padding (6→000001). Use 0=no padding. Suffix: VS column or row #',
+  
+  // Specific Symbol Configuration
+  ssOptionalLabel: 'Specific Symbol (SS) - Optional',
+  ssPrefixLabel: 'SS Prefix (digits only, default for all splits)',
+  ssPrefixDefault: 'e.g., 12345 (optional)',
+  ssPrefixHelpText: 'Default prefix. SS composed only if people data has SS column',
+  ssSuffixLengthLabel: 'SS Suffix Length (global for all splits)',
+  ssSuffixLengthPlaceholder: '6',
+  ssSuffixLengthHelp: 'Padding (6→000001). Use 0=no padding. Suffix from SS column',
+  
+  // Constant Symbol Configuration
+  ksOptionalLabel: 'Constant Symbol (KS) - Optional',
+  ksPrefixLabel: 'KS Prefix (digits only, default for all splits)',
+  ksPrefixDefault: 'e.g., 0308 (optional)',
+  ksPrefixHelpText: 'Default prefix. KS composed only if people data has KS column',
+  ksSuffixLengthLabel: 'KS Suffix Length (global for all splits)',
+  ksSuffixLengthPlaceholder: '4',
+  ksSuffixLengthHelp: 'Padding (2→08). Use 0=no padding, value as-is from KS column',
+  
+  // Split Overrides
+  amountCzk: 'Amount (CZK)',
+  splitOverridesOptional: 'ℹ️ Split Overrides (Optional):',
+  splitOverridesDescription: 'Override prefix values below if this split needs different values. Suffix length always comes from event configuration above.',
+  vsPrefixOverride: 'VS Prefix Override',
+  vsPrefixOverridePlaceholder: 'e.g., 771 (digits only)',
+  vsPrefixOverrideHelp: 'Override event VS prefix for this split only',
+  ssPrefixOverride: 'SS Prefix Override',
+  ssPrefixOverridePlaceholder: 'e.g., 12345 (optional)',
+  ssPrefixOverrideHelp: 'Override event SS prefix for this split only',
+  ksPrefixOverride: 'KS Prefix Override',
+  ksPrefixOverridePlaceholder: 'e.g., 0308 (optional)',
+  ksPrefixOverrideHelp: 'Override event KS prefix for this split only',
+  
+  // Payment fallback
+  paymentFallback: 'Payment',
 };

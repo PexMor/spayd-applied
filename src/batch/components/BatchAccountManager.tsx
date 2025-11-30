@@ -174,12 +174,12 @@ export function BatchAccountManager({
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-blue-800">Logo URL (Optional)</label>
+                        <label className="block text-sm font-medium text-blue-800">{t.logoUrl}</label>
                         <input
                             type="text"
                             value={editAccount.logoUrl || ''}
                             onInput={(e) => setEditAccount({ ...editAccount, logoUrl: (e.target as HTMLInputElement).value })}
-                            placeholder="https://example.com/logo.png"
+                            placeholder={t.logoUrlPlaceholder}
                             className="mt-1 block w-full rounded-md border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
                         />
                     </div>
