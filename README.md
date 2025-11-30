@@ -1,6 +1,6 @@
 # SPAYD Applied
 
-**Live Demo:** <https://pexmor.github.io/spayd-applied/>
+**Live Demo:** <https://pexmor.github.io/spayd-applied/app/>
 
 A comprehensive suite of tools for Czech banking operations:
 - **SPAYD QR Payment Generator** - Create standard Czech QR payment codes (SPAYD format)

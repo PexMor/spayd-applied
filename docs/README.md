@@ -1,5 +1,7 @@
 # SPAYD Applied Documentation
 
+**Live Demo:** <https://pexmor.github.io/spayd-applied/app/>
+
 Comprehensive documentation for the SPAYD Applied suite of applications.
 
 ## 📚 Documentation Index
