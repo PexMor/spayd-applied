@@ -48,7 +48,7 @@ Available options:
 - `--port`: Port to bind to (default: `3000`, env: `FIO_FETCH_PORT`)
 - `--db-path`: Path to SQLite database (default: `~/.config/fio_fetch/fio.db`, env: `FIO_FETCH_DB_PATH`)
 - `--fio-token`: Fio Bank API token (required for API access, env: `FIO_FETCH_TOKEN`)
-- `--fio-api-url`: Fio Bank API base URL (default: `https://www.fioapi.cz/v1/rest`, env: `FIO_FETCH_API_URL`)
+- `--fio-api-url`: Fio Bank API base URL (default: `https://fioapi.fio.cz/v1/rest`, env: `FIO_FETCH_API_URL`)
 - `--static-dir`: Directory for static files (default: `static`, env: `FIO_FETCH_STATIC_DIR`)
 - `-c, --config`: Path to config file (default: `~/.config/fio_fetch/config.yaml`)
 

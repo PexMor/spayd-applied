@@ -1,7 +1,7 @@
-from fiobank import FioBank
+import aiohttp
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime, date as date_type
+from datetime import datetime, timedelta
 from .models import Transaction
 from .utils import mask_token
 import logging
@@ -59,7 +59,82 @@ def load_example_transactions():
     return transactions
 
 
-def fetch_and_save_transactions(token: str, session: Session, progress_callback=None, api_url: str = None):
+async def fetch_transactions_from_fio(token: str, api_url: str, back_date_days: int):
+    """
+    Fetch transactions from Fio Bank API using direct REST calls.
+    
+    Args:
+        token: Fio Bank API token
+        api_url: Base API URL (e.g., 'https://fioapi.fio.cz/v1/rest')
+        back_date_days: Number of days back to fetch from (e.g., 3 means last 3 days)
+    
+    Returns:
+        List of transaction dictionaries
+    """
+    # Calculate date range
+    today = datetime.now().date()
+    from_date = today - timedelta(days=back_date_days)
+    
+    # Format dates as YYYY-MM-DD
+    from_date_str = from_date.strftime('%Y-%m-%d')
+    to_date_str = today.strftime('%Y-%m-%d')
+    
+    # Build URL: /v1/rest/periods/{token}/{from_date}/{to_date}/transactions.json
+    # Remove trailing /v1/rest if present in api_url
+    base_url = api_url.rstrip('/').replace('/v1/rest', '')
+    url = f"{base_url}/v1/rest/periods/{token}/{from_date_str}/{to_date_str}/transactions.json"
+    
+    logger.info(f"Fetching transactions from {from_date_str} to {to_date_str}")
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as response:
+            if response.status != 200:
+                error_text = await response.text()
+                raise Exception(f"Fio API returned status {response.status}: {error_text}")
+            
+            data = await response.json()
+    
+    # Parse the Fio API JSON format (same structure as tr.json)
+    transactions = []
+    transaction_list = data.get('accountStatement', {}).get('transactionList', {}).get('transaction', [])
+    
+    for tr in transaction_list:
+        # Extract values from the column structure
+        def get_column_value(col_name):
+            col = tr.get(col_name)
+            return col.get('value') if col else None
+        
+        # Convert timestamp to date
+        date_ms = get_column_value('column0')
+        trans_date = datetime.fromtimestamp(date_ms / 1000).date() if date_ms else None
+        
+        transaction_data = {
+            'transaction_id': str(get_column_value('column22')),
+            'date': trans_date,
+            'amount': get_column_value('column1'),
+            'currency': get_column_value('column14'),
+            'account_number': get_column_value('column2'),
+            'account_name': get_column_value('column10'),
+            'bank_code': get_column_value('column3'),
+            'bank_name': get_column_value('column12'),
+            'constant_symbol': get_column_value('column4'),
+            'variable_symbol': get_column_value('column5'),
+            'specific_symbol': get_column_value('column6'),
+            'user_identification': get_column_value('column7'),
+            'recipient_message': get_column_value('column16'),
+            'type': get_column_value('column8'),
+            'executor': get_column_value('column9'),
+            'specification': get_column_value('column18'),
+            'comment': get_column_value('column25'),
+            'bic': get_column_value('column26'),
+            'instruction_id': get_column_value('column17')
+        }
+        transactions.append(transaction_data)
+    
+    return transactions
+
+
+async def fetch_and_save_transactions(token: str, session: Session, progress_callback=None, api_url: str = None, back_date_days: int = 3):
     if not token:
         logger.warning("No Fio token provided. Using example data from tr.json.")
         if progress_callback:
@@ -74,28 +149,14 @@ def fetch_and_save_transactions(token: str, session: Session, progress_callback=
             raise e
     else:
         if progress_callback:
-            if api_url and api_url != 'https://www.fioapi.cz/v1/rest':
-                progress_callback(0, 0, f"Connecting to custom API: {api_url}...")
-            else:
-                progress_callback(0, 0, "Connecting to Fio bank...")
+            progress_callback(0, 0, f"Connecting to Fio bank API at {api_url}...")
 
-        # Create FioBank client with custom URL if provided
         try:
-            if api_url:
-                # Try to create with base_url parameter (some versions support this)
-                client = FioBank(token=token, base_url=api_url)
-            else:
-                client = FioBank(token)
-        except TypeError:
-            # If base_url is not supported, fall back to standard initialization
-            logger.warning("FioBank library doesn't support base_url parameter. Using default URL.")
-            if progress_callback:
-                progress_callback(0, 0, "⚠️ Custom API URL not supported by library. Using default...")
-            client = FioBank(token)
-        
-        try:
-            # We convert to list to know the total count for progress
-            transactions = list(client.last())
+            # Fetch transactions using direct REST API call
+            # api_url must be provided by the caller (from config)
+            if not api_url:
+                raise ValueError("api_url is required when token is provided")
+            transactions = await fetch_transactions_from_fio(token, api_url, back_date_days)
         except Exception as e:
             # Mask token in error message before logging
             error_str = mask_token(str(e), token)

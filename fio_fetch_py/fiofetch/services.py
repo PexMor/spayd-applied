@@ -65,43 +65,36 @@ class FetchService:
             self.last_fetch_time = time.time()
             await self.manager.broadcast({"status": "started", "message": "🚀 Fetch started..."})
             
+            config = None  # Store config to access token for masking
+            db = None
+            
             try:
-                # Run sync fetch in threadpool
-                loop = asyncio.get_event_loop()
-                
+                # Progress callback for async function
                 def progress_callback(current, total, message):
-                    # This is called from a thread, so we need to schedule broadcast on the loop
-                    # However, broadcast is async.
-                    # We can use run_coroutine_threadsafe
-                    asyncio.run_coroutine_threadsafe(
+                    # Schedule broadcast on the event loop
+                    asyncio.create_task(
                         self.manager.broadcast({
                             "status": "progress", 
                             "current": current, 
                             "total": total, 
                             "message": message
-                        }), 
-                        loop
+                        })
                     )
 
-                config = None  # Store config to access token for masking
+                # Setup database session
+                config = get_config()
+                engine = get_engine(config.db_path)
+                SessionLocal = get_session_local(engine)
+                db = SessionLocal()
                 
-                def do_fetch():
-                    nonlocal config
-                    config = get_config()
-                    engine = get_engine(config.db_path)
-                    SessionLocal = get_session_local(engine)
-                    db = SessionLocal()
-                    try:
-                        return fetch_and_save_transactions(
-                            config.fio_token, 
-                            db, 
-                            progress_callback,
-                            api_url=config.fio_api_url
-                        )
-                    finally:
-                        db.close()
-
-                count = await loop.run_in_executor(None, do_fetch)
+                # Call async fetch function directly
+                count = await fetch_and_save_transactions(
+                    config.fio_token, 
+                    db, 
+                    progress_callback,
+                    api_url=config.fio_api_url,
+                    back_date_days=config.back_date_days
+                )
                 
                 await self.manager.broadcast({"status": "completed", "new_transactions": count, "message": f"✅ Fetch completed! Saved {count} new transaction(s)."})
                 return {"status": "success", "new_transactions": count}
@@ -116,5 +109,8 @@ class FetchService:
                 error_message = f"❌ Fetch failed: {error_str}"
                 await self.manager.broadcast({"status": "error", "message": error_message})
                 return {"status": "error", "message": error_message}
+            finally:
+                if db:
+                    db.close()
 
 fetch_service = FetchService()

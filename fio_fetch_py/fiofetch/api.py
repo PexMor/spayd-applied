@@ -10,7 +10,7 @@ from .utils import mask_token
 import os
 import asyncio
 import logging
-import requests
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
@@ -176,14 +176,31 @@ async def set_last_date(request: SetLastDateRequest):
     target_date = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
     
     # Call Fio API to set last date
-    # Format: https://fioapi.fio.cz/v1/rest/set-last-date/{token}/{rrrr-mm-dd}/
-    # Note: The correct domain is fioapi.fio.cz (not www.fioapi.cz)
-    set_last_date_url = f"https://fioapi.fio.cz/v1/rest/set-last-date/{config.fio_token}/{target_date}/"
+    # Format: {api_url}/set-last-date/{token}/{rrrr-mm-dd}/
+    # Use api_url from config instead of hardcoded URL
+    base_url = config.fio_api_url.rstrip('/')
+    set_last_date_url = f"{base_url}/set-last-date/{config.fio_token}/{target_date}/"
     
     try:
         logger.info(f"Setting last date to {target_date} ({days_back} days back)")
-        response = requests.get(set_last_date_url, timeout=10)
-        response.raise_for_status()
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(set_last_date_url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                response_text = await response.text()
+                logger.debug(f"Response status: {response.status}")
+                logger.debug(f"Response text: {response_text}")
+                
+                if response.status == 409:
+                    error_msg = "Fio API rate limit exceeded. Please wait at least 30 seconds between requests."
+                    raise HTTPException(status_code=409, detail=error_msg)
+                elif response.status in [401, 403]:
+                    error_msg = "Invalid Fio API token. Please check your token configuration."
+                    raise HTTPException(status_code=response.status, detail=error_msg)
+                elif response.status != 200:
+                    error_msg = f"Fio API returned an error (status {response.status})"
+                    masked_error = mask_token(response_text, config.fio_token)
+                    logger.error(f"{error_msg}: {masked_error}")
+                    raise HTTPException(status_code=response.status, detail=error_msg)
         
         logger.info("Successfully set last date in Fio API")
         return {
@@ -191,28 +208,19 @@ async def set_last_date(request: SetLastDateRequest):
             "target_date": target_date,
             "days_back": days_back
         }
-    except requests.exceptions.Timeout:
+    except asyncio.TimeoutError:
         error_msg = "Request to Fio API timed out. Please try again later."
         logger.error(error_msg)
         raise HTTPException(status_code=504, detail=error_msg)
-    except requests.exceptions.ConnectionError as e:
+    except aiohttp.ClientConnectionError as e:
         error_msg = "Could not connect to Fio API. Please check your internet connection."
         masked_error = mask_token(str(e), config.fio_token)
         logger.error(f"{error_msg} Error: {masked_error}")
         raise HTTPException(status_code=503, detail=error_msg)
-    except requests.exceptions.HTTPError as e:
-        if e.response.status_code == 409:
-            error_msg = "Fio API rate limit exceeded. Please wait at least 30 seconds between requests."
-        elif e.response.status_code == 401 or e.response.status_code == 403:
-            error_msg = "Invalid Fio API token. Please check your token configuration."
-        else:
-            error_msg = f"Fio API returned an error (status {e.response.status_code})"
-        
-        # Mask token in error message before logging
-        masked_error = mask_token(str(e), config.fio_token)
-        logger.error(f"{error_msg} Error: {masked_error}")
-        raise HTTPException(status_code=e.response.status_code, detail=error_msg)
-    except requests.exceptions.RequestException as e:
+    except HTTPException:
+        # Re-raise HTTPException as-is
+        raise
+    except Exception as e:
         # Mask token in error message
         masked_error = mask_token(str(e), config.fio_token)
         error_msg = f"Failed to communicate with Fio API: {masked_error}"

@@ -10,7 +10,7 @@ def get_config():
     p.add('--port', default=3000, type=int, env_var='FIO_FETCH_PORT', help='Port to bind to')
     p.add('--db-path', default='~/.config/fio_fetch/fio.db', env_var='FIO_FETCH_DB_PATH', help='Path to SQLite database')
     p.add('--fio-token', required=False, env_var='FIO_FETCH_TOKEN', help='Fio Bank API Token')
-    p.add('--fio-api-url', default='https://www.fioapi.cz/v1/rest', env_var='FIO_FETCH_API_URL', help='Fio Bank API base URL')
+    p.add('--fio-api-url', default='https://fioapi.fio.cz/v1/rest', env_var='FIO_FETCH_API_URL', help='Fio Bank API base URL')
     p.add('--back-date-days', default=3, type=int, env_var='FIO_FETCH_BACK_DATE_DAYS', help='Number of days to set as history limit (zarážka)')
     p.add('--static-dir', default='static', env_var='FIO_FETCH_STATIC_DIR', help='Directory for static files')
     

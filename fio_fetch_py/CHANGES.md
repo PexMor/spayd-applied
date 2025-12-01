@@ -18,7 +18,7 @@ The Fio Fetch API now supports serving example data when no token is available a
 #### `fiofetch/config.py`
 
 - ✅ Already includes `--fio-api-url` configuration option with environment variable support
-- ✅ Default value: `https://www.fioapi.cz/v1/rest`
+- ✅ Default value: `https://fioapi.fio.cz/v1/rest`
 
 #### `fiofetch/api.py`
 
