@@ -10,6 +10,41 @@ import os
 
 logger = logging.getLogger(__name__)
 
+def parse_fio_date(date_value):
+    """
+    Parse date from Fio API response.
+    Handles two formats:
+    1. Numeric timestamp in milliseconds (e.g., 1340661600000)
+    2. Date string with timezone (e.g., "2025-12-02+0100")
+    
+    Returns:
+        date object or None if parsing fails
+    """
+    if date_value is None:
+        return None
+    
+    # If it's a number, treat as timestamp in milliseconds
+    if isinstance(date_value, (int, float)):
+        try:
+            return datetime.fromtimestamp(date_value / 1000).date()
+        except (ValueError, OSError, OverflowError):
+            logger.warning(f"Failed to parse timestamp: {date_value}")
+            return None
+    
+    # If it's a string, parse as date string
+    if isinstance(date_value, str):
+        # Format: "YYYY-MM-DD+HHMM" or "YYYY-MM-DD"
+        # Try to parse the date part (before the +)
+        date_str = date_value.split('+')[0]
+        try:
+            # Parse YYYY-MM-DD format
+            return datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            logger.warning(f"Failed to parse date string: {date_value}")
+            return None
+    
+    return None
+
 def load_example_transactions():
     """Load transactions from the example JSON file."""
     # Get the path to the examples directory
@@ -29,9 +64,9 @@ def load_example_transactions():
             col = tr.get(col_name)
             return col.get('value') if col else None
         
-        # Convert timestamp to date
-        date_ms = get_column_value('column0')
-        trans_date = datetime.fromtimestamp(date_ms / 1000).date() if date_ms else None
+        # Parse date (handles both timestamp and date string formats)
+        date_value = get_column_value('column0')
+        trans_date = parse_fio_date(date_value)
         
         transaction_data = {
             'transaction_id': str(get_column_value('column22')),
@@ -104,9 +139,9 @@ async def fetch_transactions_from_fio(token: str, api_url: str, back_date_days: 
             col = tr.get(col_name)
             return col.get('value') if col else None
         
-        # Convert timestamp to date
-        date_ms = get_column_value('column0')
-        trans_date = datetime.fromtimestamp(date_ms / 1000).date() if date_ms else None
+        # Parse date (handles both timestamp and date string formats)
+        date_value = get_column_value('column0')
+        trans_date = parse_fio_date(date_value)
         
         transaction_data = {
             'transaction_id': str(get_column_value('column22')),
