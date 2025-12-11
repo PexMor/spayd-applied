@@ -25,3 +25,13 @@ class Transaction(Base):
     bic = Column(String, nullable=True) # Column26 BIC
     instruction_id = Column(String, nullable=True) # Column17 ID pokynu
     payer_reference = Column(String, nullable=True) # Column27 Reference plátce
+
+class MatchingData(Base):
+    __tablename__ = "matching_data"
+
+    id = Column(Integer, primary_key=True, index=True)
+    variable_symbol = Column(String, nullable=True, index=True)
+    specific_symbol = Column(String, nullable=True, index=True)
+    constant_symbol = Column(String, nullable=True, index=True)
+    row_data = Column(Text, nullable=True)  # Store full row data as JSON string for reference
+    created_at = Column(Date, nullable=False)  # When this matching entry was created

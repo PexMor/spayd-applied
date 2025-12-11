@@ -12,6 +12,7 @@
         "axios": "^1.6.2",
         "immer": "^11.0.0",
         "preact": "^10.19.3",
+        "xlsx": "^0.18.5",
         "zustand": "^5.0.8"
     },
     "devDependencies": {

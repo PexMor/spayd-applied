@@ -20,10 +20,40 @@ const useAppStore = create(
         // Transactions cache
         transactions: [],
         transactionsLoading: false,
+        transactionsPage: 0,
+        transactionsLimit: 50,
+        transactionsTotalCount: 0,
+        transactionsFilters: {
+            variable_symbol: '',
+            specific_symbol: '',
+            constant_symbol: '',
+            counter_account: '',
+            counter_account_name: '',
+            bank_code: '',
+            bank_name: '',
+            executor: '',
+            transaction_id: '',
+        },
+        transactionsAppliedFilters: {
+            variable_symbol: '',
+            specific_symbol: '',
+            constant_symbol: '',
+            counter_account: '',
+            counter_account_name: '',
+            bank_code: '',
+            bank_name: '',
+            executor: '',
+            transaction_id: '',
+        },
         
         // Config cache
         config: null,
         configLoading: false,
+        
+        // Matching data
+        matchingData: [],
+        matchingStats: null,
+        hideMatchedTransactions: false,
         
         // Actions
         setConnected: (connected) => set((state) => {
@@ -143,6 +173,68 @@ const useAppStore = create(
         
         setConfigLoading: (loading) => set((state) => {
             state.configLoading = loading;
+        }),
+        
+        // Transaction filter actions
+        setTransactionsPage: (page) => set((state) => {
+            state.transactionsPage = page;
+        }),
+        
+        setTransactionsTotalCount: (count) => set((state) => {
+            state.transactionsTotalCount = count;
+        }),
+        
+        setTransactionsFilters: (filters) => set((state) => {
+            state.transactionsFilters = filters;
+        }),
+        
+        setTransactionsAppliedFilters: (filters) => set((state) => {
+            state.transactionsAppliedFilters = filters;
+            state.transactionsPage = 0; // Reset to first page when filters change
+        }),
+        
+        clearTransactionsFilters: () => set((state) => {
+            state.transactionsFilters = {
+                variable_symbol: '',
+                specific_symbol: '',
+                constant_symbol: '',
+                counter_account: '',
+                counter_account_name: '',
+                bank_code: '',
+                bank_name: '',
+                executor: '',
+                transaction_id: '',
+            };
+            state.transactionsAppliedFilters = {
+                variable_symbol: '',
+                specific_symbol: '',
+                constant_symbol: '',
+                counter_account: '',
+                counter_account_name: '',
+                bank_code: '',
+                bank_name: '',
+                executor: '',
+                transaction_id: '',
+            };
+            state.transactionsPage = 0;
+        }),
+        
+        // Matching data actions
+        setMatchingData: (data) => set((state) => {
+            state.matchingData = data;
+        }),
+        
+        setMatchingStats: (stats) => set((state) => {
+            state.matchingStats = stats;
+        }),
+        
+        setHideMatchedTransactions: (hide) => set((state) => {
+            state.hideMatchedTransactions = hide;
+        }),
+        
+        clearMatchingData: () => set((state) => {
+            state.matchingData = [];
+            state.matchingStats = null;
         }),
     }))
 );

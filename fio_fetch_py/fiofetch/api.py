@@ -1,16 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import date, datetime, timedelta
 from .database import get_session_local
-from .models import Transaction
+from .models import Transaction, MatchingData
 from .config import get_config
 from .utils import mask_token
 import os
 import asyncio
 import logging
 import aiohttp
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -60,9 +61,109 @@ class ConfigUpdate(BaseModel):
     back_date_days: Optional[int] = None
 
 @router.get("/transactions", response_model=List[TransactionOut])
-def list_transactions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    transactions = db.query(Transaction).offset(skip).limit(limit).all()
+def list_transactions(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
+    variable_symbol: Optional[str] = Query(None, description="Filter by Variable Symbol (substring match)"),
+    specific_symbol: Optional[str] = Query(None, description="Filter by Specific Symbol (substring match)"),
+    constant_symbol: Optional[str] = Query(None, description="Filter by Constant Symbol (substring match)"),
+    counter_account: Optional[str] = Query(None, description="Filter by Counter Account (substring match)"),
+    counter_account_name: Optional[str] = Query(None, description="Filter by Counter Account Name (substring match)"),
+    bank_code: Optional[str] = Query(None, description="Filter by Bank Code (substring match)"),
+    bank_name: Optional[str] = Query(None, description="Filter by Bank Name (substring match)"),
+    executor: Optional[str] = Query(None, description="Filter by Executor (substring match)"),
+    transaction_id: Optional[str] = Query(None, description="Filter by Transaction ID (substring match)"),
+    db: Session = Depends(get_db)
+):
+    """
+    List transactions with advanced filtering and pagination.
+    All filter parameters support substring matching (case-insensitive).
+    """
+    query = db.query(Transaction)
+    
+    # Apply filters with substring matching (case-insensitive)
+    if variable_symbol:
+        query = query.filter(Transaction.variable_symbol.ilike(f"%{variable_symbol}%"))
+    
+    if specific_symbol:
+        query = query.filter(Transaction.specific_symbol.ilike(f"%{specific_symbol}%"))
+    
+    if constant_symbol:
+        query = query.filter(Transaction.constant_symbol.ilike(f"%{constant_symbol}%"))
+    
+    if counter_account:
+        query = query.filter(Transaction.counter_account.ilike(f"%{counter_account}%"))
+    
+    if counter_account_name:
+        query = query.filter(Transaction.counter_account_name.ilike(f"%{counter_account_name}%"))
+    
+    if bank_code:
+        query = query.filter(Transaction.bank_code.ilike(f"%{bank_code}%"))
+    
+    if bank_name:
+        query = query.filter(Transaction.bank_name.ilike(f"%{bank_name}%"))
+    
+    if executor:
+        query = query.filter(Transaction.executor.ilike(f"%{executor}%"))
+    
+    if transaction_id:
+        query = query.filter(Transaction.transaction_id.ilike(f"%{transaction_id}%"))
+    
+    # Apply pagination
+    transactions = query.order_by(Transaction.date.desc(), Transaction.id.desc()).offset(skip).limit(limit).all()
+    
     return transactions
+
+@router.get("/transactions/count")
+def get_transactions_count(
+    variable_symbol: Optional[str] = Query(None, description="Filter by Variable Symbol (substring match)"),
+    specific_symbol: Optional[str] = Query(None, description="Filter by Specific Symbol (substring match)"),
+    constant_symbol: Optional[str] = Query(None, description="Filter by Constant Symbol (substring match)"),
+    counter_account: Optional[str] = Query(None, description="Filter by Counter Account (substring match)"),
+    counter_account_name: Optional[str] = Query(None, description="Filter by Counter Account Name (substring match)"),
+    bank_code: Optional[str] = Query(None, description="Filter by Bank Code (substring match)"),
+    bank_name: Optional[str] = Query(None, description="Filter by Bank Name (substring match)"),
+    executor: Optional[str] = Query(None, description="Filter by Executor (substring match)"),
+    transaction_id: Optional[str] = Query(None, description="Filter by Transaction ID (substring match)"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get total count of transactions matching the filters.
+    Useful for pagination.
+    """
+    query = db.query(Transaction)
+    
+    # Apply the same filters as list_transactions
+    if variable_symbol:
+        query = query.filter(Transaction.variable_symbol.ilike(f"%{variable_symbol}%"))
+    
+    if specific_symbol:
+        query = query.filter(Transaction.specific_symbol.ilike(f"%{specific_symbol}%"))
+    
+    if constant_symbol:
+        query = query.filter(Transaction.constant_symbol.ilike(f"%{constant_symbol}%"))
+    
+    if counter_account:
+        query = query.filter(Transaction.counter_account.ilike(f"%{counter_account}%"))
+    
+    if counter_account_name:
+        query = query.filter(Transaction.counter_account_name.ilike(f"%{counter_account_name}%"))
+    
+    if bank_code:
+        query = query.filter(Transaction.bank_code.ilike(f"%{bank_code}%"))
+    
+    if bank_name:
+        query = query.filter(Transaction.bank_name.ilike(f"%{bank_name}%"))
+    
+    if executor:
+        query = query.filter(Transaction.executor.ilike(f"%{executor}%"))
+    
+    if transaction_id:
+        query = query.filter(Transaction.transaction_id.ilike(f"%{transaction_id}%"))
+    
+    count = query.count()
+    
+    return {"count": count}
 
 from fastapi import WebSocket, WebSocketDisconnect
 from .services import fetch_service
@@ -227,3 +328,168 @@ async def set_last_date(request: SetLastDateRequest):
         logger.error(error_msg)
         # Don't expose the full error to the client, just a generic message
         raise HTTPException(status_code=500, detail="Failed to communicate with Fio API. Check server logs for details.")
+
+@router.delete("/transactions")
+def delete_all_transactions(db: Session = Depends(get_db)):
+    """
+    Delete all transactions from the database.
+    This is a destructive operation and cannot be undone.
+    """
+    try:
+        count = db.query(Transaction).count()
+        db.query(Transaction).delete()
+        db.commit()
+        logger.info(f"Deleted {count} transaction(s) from database")
+        return {
+            "message": f"Successfully deleted {count} transaction(s)",
+            "deleted_count": count
+        }
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to delete transactions: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete transactions: {str(e)}")
+
+# Matching Data Models
+class MatchingDataRow(BaseModel):
+    variable_symbol: Optional[str] = None
+    specific_symbol: Optional[str] = None
+    constant_symbol: Optional[str] = None
+    row_data: Optional[Dict[str, Any]] = None
+
+class MatchingDataUpload(BaseModel):
+    rows: List[MatchingDataRow]
+
+class MatchingDataOut(BaseModel):
+    id: int
+    variable_symbol: Optional[str]
+    specific_symbol: Optional[str]
+    constant_symbol: Optional[str]
+    row_data: Optional[str]
+    created_at: date
+
+    class Config:
+        from_attributes = True
+
+# Matching Data Endpoints
+@router.post("/matching-data")
+def upload_matching_data(data: MatchingDataUpload, db: Session = Depends(get_db)):
+    """
+    Upload matching data from a file (CSV/TSV/XLSX processed in frontend).
+    This will replace all existing matching data.
+    """
+    try:
+        # Delete existing matching data
+        db.query(MatchingData).delete()
+        
+        # Insert new matching data
+        today = date.today()
+        for row in data.rows:
+            matching_entry = MatchingData(
+                variable_symbol=row.variable_symbol,
+                specific_symbol=row.specific_symbol,
+                constant_symbol=row.constant_symbol,
+                row_data=json.dumps(row.row_data) if row.row_data else None,
+                created_at=today
+            )
+            db.add(matching_entry)
+        
+        db.commit()
+        count = len(data.rows)
+        logger.info(f"Uploaded {count} matching data row(s)")
+        
+        return {
+            "message": f"Successfully uploaded {count} matching data row(s)",
+            "count": count
+        }
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to upload matching data: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to upload matching data: {str(e)}")
+
+@router.get("/matching-data", response_model=List[MatchingDataOut])
+def get_matching_data(db: Session = Depends(get_db)):
+    """
+    Get all matching data entries.
+    """
+    try:
+        matching_data = db.query(MatchingData).all()
+        return matching_data
+    except Exception as e:
+        logger.error(f"Failed to get matching data: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get matching data: {str(e)}")
+
+@router.get("/matching-data/stats")
+def get_matching_stats(db: Session = Depends(get_db)):
+    """
+    Get statistics about matching data and how many transactions match.
+    """
+    try:
+        total_matching_rows = db.query(MatchingData).count()
+        
+        if total_matching_rows == 0:
+            return {
+                "total_matching_rows": 0,
+                "matched_transactions": 0,
+                "total_transactions": db.query(Transaction).count()
+            }
+        
+        # Find matched transactions
+        # Match by VS, SS, and optionally KS
+        matched_transaction_ids = set()
+        
+        matching_entries = db.query(MatchingData).all()
+        transactions = db.query(Transaction).all()
+        
+        for entry in matching_entries:
+            for tx in transactions:
+                # Match if VS matches (and both are not None/empty)
+                vs_match = (
+                    entry.variable_symbol and tx.variable_symbol and
+                    entry.variable_symbol.strip() == tx.variable_symbol.strip()
+                )
+                
+                # Match if SS matches (and both are not None/empty)
+                ss_match = (
+                    entry.specific_symbol and tx.specific_symbol and
+                    entry.specific_symbol.strip() == tx.specific_symbol.strip()
+                )
+                
+                # Match if KS matches (if provided in matching data)
+                ks_match = True
+                if entry.constant_symbol:
+                    ks_match = (
+                        tx.constant_symbol and
+                        entry.constant_symbol.strip() == tx.constant_symbol.strip()
+                    )
+                
+                # Transaction matches if VS and SS match, and KS matches if provided
+                if vs_match and ss_match and ks_match:
+                    matched_transaction_ids.add(tx.id)
+        
+        return {
+            "total_matching_rows": total_matching_rows,
+            "matched_transactions": len(matched_transaction_ids),
+            "total_transactions": len(transactions)
+        }
+    except Exception as e:
+        logger.error(f"Failed to get matching stats: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get matching stats: {str(e)}")
+
+@router.delete("/matching-data")
+def delete_matching_data(db: Session = Depends(get_db)):
+    """
+    Delete all matching data.
+    """
+    try:
+        count = db.query(MatchingData).count()
+        db.query(MatchingData).delete()
+        db.commit()
+        logger.info(f"Deleted {count} matching data row(s)")
+        return {
+            "message": f"Successfully deleted {count} matching data row(s)",
+            "deleted_count": count
+        }
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to delete matching data: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete matching data: {str(e)}")
