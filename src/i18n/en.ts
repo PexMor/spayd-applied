@@ -283,6 +283,8 @@ export const en: TranslationKeys = {
   
   // Batch Preview
   downloadZip: 'Download ZIP',
+  downloadCSV: 'CSV',
+  downloadMatchingCSV: 'Download CSV for matching',
   generatingZip: 'Generating...',
   previewFor: 'Preview:',
   pleaseSelectAccountFirst: 'Please select an account first (Step 1: Accounts)',
@@ -292,6 +294,7 @@ export const en: TranslationKeys = {
   errorGeneratingPreview: 'Error generating preview',
   uploadDataToSeePreview: 'Upload data to see preview',
   failedToGenerateZip: 'Failed to generate ZIP',
+  failedToGenerateCSV: 'Failed to generate CSV',
   
   // Manual Payment Entry
   addManualPayment: '+ Add Single Payment Manually',

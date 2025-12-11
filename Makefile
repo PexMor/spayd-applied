@@ -1,16 +1,24 @@
-# Makefile for FioFetch Docker Management
+# Makefile for SPAYD Applied Project
 # 
-# Common commands:
-#   make build       - Build Docker image
-#   make run         - Run container
-#   make stop        - Stop container
-#   make logs        - View logs (follow mode)
-#   make clean       - Stop and remove container
-#   make rebuild     - Stop, rebuild, and run
-#   make shell       - Access container shell
-#   make help        - Show this help message
+# Main App Build Commands:
+#   make app-build      - Build main app (index.html, simple.html, batch.html)
+#   make app-dev        - Run dev server for main app
+#   make app-preview    - Preview production build
+#   make app-deploy     - Build and copy to docs/app/ for GitHub Pages
+#   make app-clean      - Clean dist/ directory
+#
+# FioFetch Docker Commands:
+#   make build          - Build Docker image
+#   make run            - Run container
+#   make stop           - Stop container
+#   make logs           - View logs (follow mode)
+#   make clean          - Stop and remove container
+#   make rebuild        - Stop, rebuild, and run
+#   make shell          - Access container shell
+#   make help           - Show this help message
 
 .PHONY: help build run stop restart logs clean rebuild shell status health
+.PHONY: app-build app-dev app-preview app-deploy app-clean
 
 # Default image and container names
 IMAGE_NAME ?= fiofetch
@@ -129,4 +137,25 @@ compose-rebuild: ## Rebuild with docker-compose
 	@echo "$(COLOR_GREEN)Rebuilding with docker-compose...$(COLOR_RESET)"
 	./d10_build.sh
 	docker-compose up -d --force-recreate
+
+# Main App Build Targets
+app-build: ## Build main app (index.html, simple.html, batch.html)
+	@echo "$(COLOR_GREEN)Building main app...$(COLOR_RESET)"
+	yarn build
+
+app-dev: ## Run dev server for main app
+	@echo "$(COLOR_GREEN)Starting dev server...$(COLOR_RESET)"
+	yarn dev
+
+app-preview: ## Preview production build
+	@echo "$(COLOR_GREEN)Previewing production build...$(COLOR_RESET)"
+	yarn preview
+
+app-deploy: app-build ## Build and copy to docs/app/ for GitHub Pages
+	@echo "$(COLOR_GREEN)Deploying to docs/app/...$(COLOR_RESET)"
+	./copy-dist-to-docs.sh
+
+app-clean: ## Clean dist/ directory
+	@echo "$(COLOR_YELLOW)Cleaning dist/ directory...$(COLOR_RESET)"
+	rm -rf dist/
 

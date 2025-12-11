@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import { useI18n } from '../../I18nContext';
 import { BatchConfig, BatchData } from '../BatchApp';
-import { generateEmailHtml, generateBatchZip } from '../services/email-generator';
+import { generateEmailHtml, generateBatchZip, downloadMatchingCSV } from '../services/email-generator';
 import QRCode from 'qrcode';
 import spayd from 'spayd';
 import { IBAN } from 'ibankit';
@@ -131,6 +131,15 @@ export function EmailPreview({ data, config }: EmailPreviewProps) {
         }
     };
 
+    const handleDownloadCSV = () => {
+        try {
+            downloadMatchingCSV(data, config);
+        } catch (err) {
+            console.error(err);
+            alert(t.failedToGenerateCSV || 'Failed to generate CSV file');
+        }
+    };
+
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center bg-purple-50 p-3 rounded-lg border border-purple-100">
@@ -154,21 +163,31 @@ export function EmailPreview({ data, config }: EmailPreviewProps) {
                     </button>
                 </div>
 
-                <button
-                    onClick={handleDownload}
-                    disabled={isGenerating}
-                    className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 shadow-sm transition-all font-medium flex items-center gap-2"
-                >
-                    {isGenerating ? (
-                        <>
-                            <span className="animate-spin">⏳</span> {t.generatingZip}
-                        </>
-                    ) : (
-                        <>
-                            <span>📦</span> {t.downloadZip}
-                        </>
-                    )}
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={handleDownloadCSV}
+                        disabled={isGenerating}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 shadow-sm transition-all font-medium flex items-center gap-2 text-sm"
+                        title={t.downloadMatchingCSV || 'Download CSV for matching'}
+                    >
+                        <span>📊</span> {t.downloadCSV || 'CSV'}
+                    </button>
+                    <button
+                        onClick={handleDownload}
+                        disabled={isGenerating}
+                        className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 shadow-sm transition-all font-medium flex items-center gap-2"
+                    >
+                        {isGenerating ? (
+                            <>
+                                <span className="animate-spin">⏳</span> {t.generatingZip}
+                            </>
+                        ) : (
+                            <>
+                                <span>📦</span> {t.downloadZip}
+                            </>
+                        )}
+                    </button>
+                </div>
             </div>
 
             <div className="border rounded-lg overflow-hidden shadow-lg bg-gray-900 min-h-[600px] flex flex-col ring-4 ring-purple-50">

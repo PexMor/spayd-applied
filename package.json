@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "cd fio_fetch_webui && tsc && vite build",
-    "preview": "cd fio_fetch_webui && vite preview",
+    "build": "vite build",
+    "build:webui": "cd fio_fetch_webui && tsc && vite build",
+    "preview": "vite preview",
+    "preview:webui": "cd fio_fetch_webui && vite preview",
     "webui": "cd fio_fetch_py && uv run fiofetch --static-dir ../fio_fetch_webui/dist"
   },
   "dependencies": {

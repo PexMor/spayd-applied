@@ -204,6 +204,85 @@ function replacePlaceholders(template: string, data: any): string {
     return template.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] || '');
 }
 
+/**
+ * Generate CSV content for matching data
+ * Includes VS, SS, KS columns (from first split) plus all original columns from people data
+ * Compatible with MatchingDataUpload component format
+ */
+function generateMatchingCSV(data: BatchData, config: BatchConfig): string {
+    if (!config.event || data.rows.length === 0 || config.event.splits.length === 0) {
+        return '';
+    }
+
+    const event = config.event;
+    const rows: string[][] = [];
+
+    // Build header row: VS, SS, KS, then all original columns
+    const headerRow = ['VS', 'SS'];
+    if (event.ksPrefix !== undefined || data.headers.some(h => h.toUpperCase() === 'KS')) {
+        headerRow.push('KS');
+    }
+    // Add all original columns (excluding VS, SS, KS if they exist to avoid duplicates)
+    const originalHeaders = data.headers.filter(h => {
+        const upper = h.toUpperCase();
+        return upper !== 'VS' && upper !== 'SS' && upper !== 'KS';
+    });
+    headerRow.push(...originalHeaders);
+    rows.push(headerRow);
+
+    // Generate rows with composed symbols
+    for (let i = 0; i < data.rows.length; i++) {
+        const row = data.rows[i];
+        const firstSplit = event.splits[0]; // Safe because we checked splits.length > 0
+
+        // Compose symbols using first split (for CSV export, we use first split's values)
+        const vs = composeVS(
+            event.vsPrefix,
+            event.vsSuffixLength,
+            row['VS'] || '',
+            i,
+            firstSplit.vsPrefix
+        );
+        const ss = composeSS(
+            event.ssPrefix,
+            event.ssSuffixLength,
+            row['SS'] || '',
+            i,
+            firstSplit.ssPrefix
+        );
+        const ks = composeKS(
+            event.ksPrefix,
+            event.ksSuffixLength,
+            row['KS'] || '',
+            i,
+            firstSplit.ksPrefix
+        );
+
+        // Build CSV row: VS, SS, KS (if applicable), then original columns
+        const csvRow: string[] = [vs, ss || ''];
+        if (event.ksPrefix !== undefined || data.headers.some(h => h.toUpperCase() === 'KS')) {
+            csvRow.push(ks || '');
+        }
+        // Add all original column values (excluding VS, SS, KS)
+        originalHeaders.forEach(header => {
+            csvRow.push(String(row[header] || ''));
+        });
+        rows.push(csvRow);
+    }
+
+    // Convert to CSV format (semicolon-separated, compatible with MatchingDataUpload)
+    return rows.map(row => 
+        row.map(cell => {
+            // Escape semicolons and quotes in cell values
+            const cellStr = String(cell || '');
+            if (cellStr.includes(';') || cellStr.includes('"') || cellStr.includes('\n')) {
+                return `"${cellStr.replace(/"/g, '""')}"`;
+            }
+            return cellStr;
+        }).join(';')
+    ).join('\n');
+}
+
 // Removed - now using composeVS, composeSS, composeKS from symbol-composer.ts
 
 export async function generateBatchZip(data: BatchData, config: BatchConfig, t: any, locale: string) {
@@ -369,6 +448,34 @@ export async function generateBatchZip(data: BatchData, config: BatchConfig, t: 
         rows: data.rows
     }, null, 2));
 
+    // Generate and save matching CSV
+    const matchingCSV = generateMatchingCSV(data, config);
+    if (matchingCSV) {
+        // Add UTF-8 BOM for better Excel compatibility
+        const csvWithBOM = '\uFEFF' + matchingCSV;
+        zip.file('matching_data.csv', csvWithBOM);
+    }
+
     const content = await zip.generateAsync({ type: 'blob' });
     saveAs(content, 'batch_payments.zip');
+}
+
+/**
+ * Generate and download matching CSV file separately
+ * Compatible with MatchingDataUpload component
+ */
+export function downloadMatchingCSV(data: BatchData, config: BatchConfig) {
+    if (!config.event) {
+        throw new Error('No event selected');
+    }
+
+    const csvContent = generateMatchingCSV(data, config);
+    if (!csvContent) {
+        throw new Error('No data to export');
+    }
+
+    // Add UTF-8 BOM for better Excel compatibility
+    const csvWithBOM = '\uFEFF' + csvContent;
+    const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, 'matching_data.csv');
 }

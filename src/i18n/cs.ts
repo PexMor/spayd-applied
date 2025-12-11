@@ -282,6 +282,8 @@ export const cs = {
   
   // Batch Preview
   downloadZip: 'Stáhnout ZIP',
+  downloadCSV: 'CSV',
+  downloadMatchingCSV: 'Stáhnout CSV pro párování',
   generatingZip: 'Generování...',
   previewFor: 'Náhled:',
   pleaseSelectAccountFirst: 'Prosím vyberte nejprve účet (Krok 1: Účty)',
@@ -291,6 +293,7 @@ export const cs = {
   errorGeneratingPreview: 'Chyba při generování náhledu',
   uploadDataToSeePreview: 'Nahrajte data pro zobrazení náhledu',
   failedToGenerateZip: 'Nepodařilo se vygenerovat ZIP',
+  failedToGenerateCSV: 'Nepodařilo se vygenerovat CSV',
 
   // Manual Payment Entry
   addManualPayment: '+ Přidat Jednu Platbu Ručně',
