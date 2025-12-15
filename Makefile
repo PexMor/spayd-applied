@@ -25,6 +25,7 @@ IMAGE_NAME ?= fiofetch
 IMAGE_TAG ?= latest
 CONTAINER_NAME ?= fiofetch
 PORT ?= 3000
+HOST ?= 0.0.0.0
 
 # Colors for output
 COLOR_RESET = \033[0m
@@ -47,6 +48,7 @@ help: ## Show this help message
 	@echo "  IMAGE_TAG=$(IMAGE_TAG)"
 	@echo "  CONTAINER_NAME=$(CONTAINER_NAME)"
 	@echo "  PORT=$(PORT)"
+	@echo "  HOST=$(HOST)"
 	@echo ""
 	@echo "$(COLOR_YELLOW)Examples:$(COLOR_RESET)"
 	@echo "  make build                           # Build default image"
@@ -61,7 +63,7 @@ build: ## Build Docker image
 
 run: ## Run Docker container
 	@echo "$(COLOR_GREEN)Starting Docker container...$(COLOR_RESET)"
-	FIO_FETCH_PORT=$(PORT) CONTAINER_NAME=$(CONTAINER_NAME) ./d20_run.sh $(IMAGE_NAME) $(IMAGE_TAG)
+	FIO_FETCH_PORT=$(PORT) FIO_FETCH_HOST=$(HOST) CONTAINER_NAME=$(CONTAINER_NAME) ./d20_run.sh $(IMAGE_NAME) $(IMAGE_TAG)
 
 stop: ## Stop Docker container
 	@echo "$(COLOR_YELLOW)Stopping Docker container...$(COLOR_RESET)"

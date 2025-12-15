@@ -75,6 +75,7 @@ function ConfigPanel() {
         { value: 'https://fioapi.fio.cz/v1/rest', label: 'Fio Bank Production API (https://fioapi.fio.cz/v1/rest)' },
         { value: 'http://host.docker.internal:8000/v1/rest', label: 'Docker Internal Mock (http://host.docker.internal:8000/v1/rest)' },
         { value: 'http://localhost:8000/v1/rest', label: 'Localhost Mock (http://localhost:8000/v1/rest)' },
+        { value: 'http://172.17.0.1:8000/v1/rest', label: 'Localhost Mock (http://172.17.0.1:8000/v1/rest)' },
     ];
 
     const handleUpdateApiUrl = async (e) => {

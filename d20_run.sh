@@ -16,6 +16,7 @@
 # Environment Variables:
 #   FIO_FETCH_TOKEN    - Fio Bank API token (optional, can be configured via web UI)
 #   FIO_FETCH_PORT     - Port to expose (default: 3000)
+#   FIO_FETCH_HOST     - Host to expose (default: 0.0.0.0)
 #   CONTAINER_NAME     - Name for the container (default: fiofetch)
 #
 # Examples:
@@ -36,6 +37,7 @@ FULL_IMAGE_NAME="${IMAGE_NAME}:${TAG}"
 
 # Environment variable defaults
 HOST_PORT="${FIO_FETCH_PORT:-3000}"
+HOST_HOST="${FIO_FETCH_HOST:-0.0.0.0}"
 CONTAINER_NAME="${CONTAINER_NAME:-fiofetch}"
 
 # Colors for output
@@ -150,7 +152,7 @@ fi
 # Build docker run command
 DOCKER_CMD="docker run -d"
 DOCKER_CMD="${DOCKER_CMD} --name ${CONTAINER_NAME}"
-DOCKER_CMD="${DOCKER_CMD} -p ${HOST_PORT}:3000"
+DOCKER_CMD="${DOCKER_CMD} -p ${HOST_HOST}:${HOST_PORT}"
 DOCKER_CMD="${DOCKER_CMD} -v \"${CONFIG_DIR}:/root/.config/fio_fetch\""
 
 # Add environment variables if set
@@ -174,7 +176,7 @@ DOCKER_CMD="${DOCKER_CMD} ${FULL_IMAGE_NAME}"
 print_info "Starting container with configuration:"
 echo "  Image:      ${FULL_IMAGE_NAME}"
 echo "  Container:  ${CONTAINER_NAME}"
-echo "  Port:       ${HOST_PORT}:3000"
+echo "  Port:       ${HOST_HOST}:${HOST_PORT}"
 echo "  Volume:     ${CONFIG_DIR} -> /root/.config/fio_fetch"
 echo ""
 
@@ -190,7 +192,7 @@ if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
     print_success "Container started successfully!"
     echo ""
     print_info "Container ID: ${CONTAINER_ID:0:12}"
-    print_info "Access the application at: http://localhost:${HOST_PORT}"
+    print_info "Access the application at: http://${HOST_HOST}:${HOST_PORT}"
     echo ""
     print_info "Useful commands:"
     echo "  View logs:     docker logs -f ${CONTAINER_NAME}"
