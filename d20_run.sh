@@ -152,7 +152,7 @@ fi
 # Build docker run command
 DOCKER_CMD="docker run -d"
 DOCKER_CMD="${DOCKER_CMD} --name ${CONTAINER_NAME}"
-DOCKER_CMD="${DOCKER_CMD} -p ${HOST_HOST}:${HOST_PORT}"
+DOCKER_CMD="${DOCKER_CMD} -p ${HOST_HOST}:${HOST_PORT}:3000"
 DOCKER_CMD="${DOCKER_CMD} -v \"${CONFIG_DIR}:/root/.config/fio_fetch\""
 
 # Add environment variables if set
@@ -176,7 +176,7 @@ DOCKER_CMD="${DOCKER_CMD} ${FULL_IMAGE_NAME}"
 print_info "Starting container with configuration:"
 echo "  Image:      ${FULL_IMAGE_NAME}"
 echo "  Container:  ${CONTAINER_NAME}"
-echo "  Port:       ${HOST_HOST}:${HOST_PORT}"
+echo "  Port:       ${HOST_HOST}:${HOST_PORT}:3000"
 echo "  Volume:     ${CONFIG_DIR} -> /root/.config/fio_fetch"
 echo ""
 
