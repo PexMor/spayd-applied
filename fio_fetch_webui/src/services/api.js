@@ -6,11 +6,25 @@ const api = axios.create({
     baseURL: API_BASE,
     headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
     },
 });
 
+// Add timestamp to GET requests to prevent browser caching
+api.interceptors.request.use((config) => {
+    if (config.method === 'get') {
+        config.params = {
+            ...config.params,
+            _t: Date.now(),
+        };
+    }
+    return config;
+});
+
 // Transactions
-export const getTransactions = async (skip = 0, limit = 100, filters = {}) => {
+export const getTransactions = async (skip = 0, limit = 100, filters = {}, hideMatched = false) => {
     const params = { skip, limit };
     
     // Add filter parameters if provided
@@ -24,12 +38,15 @@ export const getTransactions = async (skip = 0, limit = 100, filters = {}) => {
     if (filters.executor) params.executor = filters.executor;
     if (filters.transaction_id) params.transaction_id = filters.transaction_id;
     
+    // Add hide_matched filter
+    if (hideMatched) params.hide_matched = true;
+    
     const response = await api.get('/transactions', { params });
     return response.data;
 };
 
 // Get transaction count with filters
-export const getTransactionsCount = async (filters = {}) => {
+export const getTransactionsCount = async (filters = {}, hideMatched = false) => {
     const params = {};
     
     // Add filter parameters if provided
@@ -42,6 +59,9 @@ export const getTransactionsCount = async (filters = {}) => {
     if (filters.bank_name) params.bank_name = filters.bank_name;
     if (filters.executor) params.executor = filters.executor;
     if (filters.transaction_id) params.transaction_id = filters.transaction_id;
+    
+    // Add hide_matched filter
+    if (hideMatched) params.hide_matched = true;
     
     const response = await api.get('/transactions/count', { params });
     return response.data;
@@ -95,6 +115,17 @@ export const getMatchingStats = async () => {
 export const deleteMatchingData = async () => {
     const response = await api.delete('/matching-data');
     return response.data;
+};
+
+// Fetch matching data from external URL
+export const fetchMatchingDataFromUrl = async (url) => {
+    // Fetch from external URL (not through our API proxy)
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Failed to fetch matching data: ${response.status} ${response.statusText}`);
+    }
+    const data = await response.json();
+    return data;
 };
 
 export default api;

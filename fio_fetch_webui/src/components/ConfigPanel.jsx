@@ -3,7 +3,7 @@ import { getConfig, updateConfig, deleteAllTransactions, deleteMatchingData } fr
 import useAppStore from '../store/useAppStore';
 
 function ConfigPanel() {
-    const { clearMatchingData } = useAppStore();
+    const { clearMatchingData, rowsPerPage, setRowsPerPage, matchingDataUrl, setMatchingDataUrl } = useAppStore();
     const [config, setConfig] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -20,6 +20,7 @@ function ConfigPanel() {
     const [deleting, setDeleting] = useState(false);
     const [deletingMatching, setDeletingMatching] = useState(false);
     const [message, setMessage] = useState(null);
+    const [newMatchingDataUrl, setNewMatchingDataUrl] = useState(matchingDataUrl);
 
     useEffect(() => {
         loadConfig();
@@ -186,6 +187,44 @@ function ConfigPanel() {
         }
     };
 
+    const handleDeleteMatchingData = async () => {
+        try {
+            setDeletingMatching(true);
+            setMessage(null);
+
+            const result = await deleteMatchingData();
+
+            setMessage({
+                type: 'success',
+                text: result.message || 'Successfully deleted matching data',
+            });
+            setShowDeleteMatchingConfirm(false);
+            clearMatchingData();
+        } catch (error) {
+            console.error('Failed to delete matching data:', error);
+            setMessage({
+                type: 'danger',
+                text: error.response?.data?.detail || 'Failed to delete matching data',
+            });
+            setShowDeleteMatchingConfirm(false);
+        } finally {
+            setDeletingMatching(false);
+        }
+    };
+
+    const handleRowsPerPageChange = (value) => {
+        const rows = parseInt(value);
+        if (rows >= 10 && rows <= 500) {
+            setRowsPerPage(rows);
+            setMessage({ type: 'success', text: `Rows per page set to ${rows}` });
+        }
+    };
+
+    const handleSaveMatchingDataUrl = () => {
+        setMatchingDataUrl(newMatchingDataUrl);
+        setMessage({ type: 'success', text: 'Matching data URL saved. Use the "Fetch from URL" button in the Transactions view to load data.' });
+    };
+
     if (loading) {
         return (
             <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
@@ -228,17 +267,15 @@ function ConfigPanel() {
                     <div>
                         <div className="text-sm text-secondary mb-xs">Fio API Token</div>
                         <div className="flex items-center gap-md">
-                            <code
+                            <span
+                                className={`badge ${config?.fio_token ? 'badge-success' : 'badge-warning'}`}
                                 style={{
-                                    background: 'var(--bg-secondary)',
-                                    padding: 'var(--space-sm) var(--space-md)',
-                                    borderRadius: 'var(--radius-sm)',
-                                    fontFamily: 'var(--font-mono)',
+                                    padding: 'var(--space-xs) var(--space-sm)',
                                     fontSize: '0.875rem',
                                 }}
                             >
-                                {config?.fio_token || 'Not set'}
-                            </code>
+                                {config?.fio_token ? '✓ Set' : '✗ Not set'}
+                            </span>
                             {!showTokenInput && (
                                 <button
                                     onClick={() => setShowTokenInput(true)}
@@ -303,6 +340,44 @@ function ConfigPanel() {
                                     Update
                                 </button>
                             )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* UI Settings */}
+            <div className="card mb-lg">
+                <div className="card-header">
+                    <h3>📱 Display Settings</h3>
+                </div>
+
+                <div className="flex flex-col gap-md">
+                    <div>
+                        <div className="text-sm text-secondary mb-xs">Rows per Page</div>
+                        <div className="flex items-center gap-md">
+                            <select
+                                value={rowsPerPage}
+                                onChange={(e) => handleRowsPerPageChange(e.target.value)}
+                                style={{
+                                    padding: 'var(--space-sm) var(--space-md)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    border: '1px solid var(--border-color)',
+                                    background: 'var(--bg-primary)',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '0.875rem',
+                                    minWidth: '120px',
+                                }}
+                            >
+                                <option value="10">10 rows</option>
+                                <option value="25">25 rows</option>
+                                <option value="50">50 rows</option>
+                                <option value="100">100 rows</option>
+                                <option value="200">200 rows</option>
+                                <option value="500">500 rows</option>
+                            </select>
+                            <span className="text-sm text-tertiary">
+                                Number of transactions to display per page
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -581,7 +656,7 @@ function ConfigPanel() {
             )}
 
             {/* Delete All Transactions */}
-            <div className="card" style={{ border: '2px solid var(--danger)', background: 'var(--bg-secondary)' }}>
+            <div className="card mb-lg" style={{ border: '2px solid var(--danger)', background: 'var(--bg-secondary)' }}>
                 <div className="card-header">
                     <h3 style={{ color: 'var(--danger)' }}>⚠️ Danger Zone</h3>
                 </div>
@@ -648,77 +723,122 @@ function ConfigPanel() {
                 </div>
             </div>
 
-            {/* Delete Matching Data */}
-            <div className="card" style={{ border: '2px solid var(--warning)', background: 'var(--bg-secondary)' }}>
+            {/* Matching Data */}
+            <div className="card mb-lg" style={{ border: '2px solid var(--primary-400)', background: 'var(--bg-secondary)' }}>
                 <div className="card-header">
-                    <h3 style={{ color: 'var(--warning)' }}>🗂️ Matching Data</h3>
+                    <h3 style={{ color: 'var(--primary-500)' }}>🗂️ Matching Data</h3>
                 </div>
 
-                <div className="flex flex-col gap-md">
-                    <p className="text-sm text-secondary">
-                        Delete all uploaded matching data (VS, SS, KS entries). This will remove matching information but not affect transactions.
-                    </p>
-
-                    {!showDeleteMatchingConfirm ? (
-                        <button
-                            onClick={() => setShowDeleteMatchingConfirm(true)}
-                            className="btn-secondary"
-                            style={{
-                                alignSelf: 'flex-start',
-                                padding: 'var(--space-sm) var(--space-md)',
-                                borderColor: 'var(--warning)',
-                                color: 'var(--warning)',
-                            }}
-                        >
-                            🗑️ Delete Matching Data
-                        </button>
-                    ) : (
-                        <div className="flex flex-col gap-md animate-fade-in">
-                            <div
-                                className="badge badge-warning"
-                                style={{ padding: 'var(--space-md)', fontSize: '0.95rem' }}
+                <div className="flex flex-col gap-lg">
+                    {/* Matching Data URL Configuration */}
+                    <div>
+                        <div className="text-sm text-secondary mb-xs">Matching Data API URL</div>
+                        <p className="text-sm text-tertiary mb-sm">
+                            Configure a URL to fetch matching data (JSON array with VS, SS, KS entries). 
+                            Once saved, use the "Fetch from URL" button in the Transactions view.
+                        </p>
+                        <div className="flex gap-sm" style={{ flexWrap: 'wrap' }}>
+                            <input
+                                type="url"
+                                value={newMatchingDataUrl}
+                                onInput={(e) => setNewMatchingDataUrl(e.target.value)}
+                                placeholder="https://example.com/api/matching-data.json"
+                                style={{
+                                    flex: 1,
+                                    minWidth: '200px',
+                                    padding: 'var(--space-sm) var(--space-md)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    border: '1px solid var(--border-color)',
+                                    background: 'var(--bg-primary)',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '0.875rem',
+                                }}
+                            />
+                            <button
+                                onClick={handleSaveMatchingDataUrl}
+                                className="btn-secondary"
+                                style={{ padding: 'var(--space-sm) var(--space-md)', fontSize: '0.875rem' }}
+                                disabled={newMatchingDataUrl === matchingDataUrl}
                             >
-                                ⚠️ <strong>Warning:</strong> This will permanently delete all matching data. Matching highlights will be removed from transactions. Are you sure you want to continue?
-                            </div>
-
-                            <div className="flex gap-md">
-                                <button
-                                    onClick={handleDeleteMatchingData}
-                                    className="btn-secondary"
-                                    disabled={deletingMatching}
-                                    style={{
-                                        padding: 'var(--space-sm) var(--space-md)',
-                                        borderColor: 'var(--warning)',
-                                        color: 'var(--warning)',
-                                    }}
-                                >
-                                    {deletingMatching ? (
-                                        <>
-                                            <div className="spinner" style={{ width: '1rem', height: '1rem', borderWidth: '2px' }}></div>
-                                            Deleting...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span>🗑️</span>
-                                            Yes, Delete Matching Data
-                                        </>
-                                    )}
-                                </button>
-
-                                <button
-                                    onClick={() => {
-                                        setShowDeleteMatchingConfirm(false);
-                                        setMessage(null);
-                                    }}
-                                    className="btn-secondary"
-                                    disabled={deletingMatching}
-                                    style={{ padding: 'var(--space-sm) var(--space-md)' }}
-                                >
-                                    Cancel
-                                </button>
-                            </div>
+                                💾 Save URL
+                            </button>
                         </div>
-                    )}
+                        {matchingDataUrl && (
+                            <div className="mt-sm">
+                                <span className="badge badge-success" style={{ padding: 'var(--space-xs) var(--space-sm)', fontSize: '0.75rem' }}>
+                                    ✓ URL configured
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Delete matching data */}
+                    <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 'var(--space-md)' }}>
+                        <p className="text-sm text-secondary mb-sm">
+                            Delete all uploaded matching data (VS, SS, KS entries). This will remove matching information but not affect transactions.
+                        </p>
+
+                        {!showDeleteMatchingConfirm ? (
+                            <button
+                                onClick={() => setShowDeleteMatchingConfirm(true)}
+                                className="btn-secondary"
+                                style={{
+                                    alignSelf: 'flex-start',
+                                    padding: 'var(--space-sm) var(--space-md)',
+                                    borderColor: 'var(--warning)',
+                                    color: 'var(--warning)',
+                                }}
+                            >
+                                🗑️ Delete Matching Data
+                            </button>
+                        ) : (
+                            <div className="flex flex-col gap-md animate-fade-in">
+                                <div
+                                    className="badge badge-warning"
+                                    style={{ padding: 'var(--space-md)', fontSize: '0.95rem' }}
+                                >
+                                    ⚠️ <strong>Warning:</strong> This will permanently delete all matching data. Matching highlights will be removed from transactions. Are you sure you want to continue?
+                                </div>
+
+                                <div className="flex gap-md">
+                                    <button
+                                        onClick={handleDeleteMatchingData}
+                                        className="btn-secondary"
+                                        disabled={deletingMatching}
+                                        style={{
+                                            padding: 'var(--space-sm) var(--space-md)',
+                                            borderColor: 'var(--warning)',
+                                            color: 'var(--warning)',
+                                        }}
+                                    >
+                                        {deletingMatching ? (
+                                            <>
+                                                <div className="spinner" style={{ width: '1rem', height: '1rem', borderWidth: '2px' }}></div>
+                                                Deleting...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span>🗑️</span>
+                                                Yes, Delete Matching Data
+                                            </>
+                                        )}
+                                    </button>
+
+                                    <button
+                                        onClick={() => {
+                                            setShowDeleteMatchingConfirm(false);
+                                            setMessage(null);
+                                        }}
+                                        className="btn-secondary"
+                                        disabled={deletingMatching}
+                                        style={{ padding: 'var(--space-sm) var(--space-md)' }}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 

@@ -17,17 +17,30 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Singleton for database engine and session factory
+_db_engine = None
+_db_session_local = None
+
+def _get_db_components():
+    """Get or create the database engine and session factory (singleton)."""
+    global _db_engine, _db_session_local
+    if _db_engine is None or _db_session_local is None:
+        config = get_config()
+        from .database import get_engine
+        _db_engine = get_engine(config.db_path)
+        _db_session_local = get_session_local(_db_engine)
+        logger.info(f"Database initialized: {config.db_path}")
+    return _db_engine, _db_session_local
+
 # Dependency to get DB session
 def get_db():
-    config = get_config()
-    from .database import get_engine
-    engine = get_engine(config.db_path)
-    SessionLocal = get_session_local(engine)
+    _, SessionLocal = _get_db_components()
     db = SessionLocal()
     try:
         yield db
     finally:
-        db.close()
+        # For scoped_session, use remove() to properly clean up
+        SessionLocal.remove()
 
 class TransactionOut(BaseModel):
     id: int
@@ -60,6 +73,68 @@ class ConfigUpdate(BaseModel):
     fio_api_url: Optional[str] = None
     back_date_days: Optional[int] = None
 
+def get_matched_transaction_ids(db: Session, debug: bool = False) -> set:
+    """Get IDs of transactions that match the matching data."""
+    def normalize_symbol(value):
+        """Normalize symbol value - treat null, empty, '-', 'null', 'N/A' as empty."""
+        if value is None:
+            return ''
+        s = str(value).strip()
+        if s == '' or s == '-' or s.lower() in ('null', 'undefined', 'n/a'):
+            return ''
+        return s
+    
+    matched_ids = set()
+    matching_entries = db.query(MatchingData).all()
+    
+    if not matching_entries:
+        if debug:
+            logger.debug("No matching entries found")
+        return matched_ids
+    
+    transactions = db.query(Transaction).all()
+    
+    if debug:
+        logger.debug(f"Checking {len(matching_entries)} matching entries against {len(transactions)} transactions")
+    
+    for entry in matching_entries:
+        entry_vs = normalize_symbol(entry.variable_symbol)
+        entry_ss = normalize_symbol(entry.specific_symbol)
+        
+        # Skip entries that don't have both VS and SS
+        if not entry_vs or not entry_ss:
+            if debug:
+                logger.debug(f"Skipping entry (missing VS or SS): VS='{entry.variable_symbol}' SS='{entry.specific_symbol}'")
+            continue
+        
+        for tx in transactions:
+            tx_vs = normalize_symbol(tx.variable_symbol)
+            tx_ss = normalize_symbol(tx.specific_symbol)
+            
+            # Transaction must have both VS and SS
+            if not tx_vs or not tx_ss:
+                continue
+            
+            # VS and SS must both match exactly
+            if entry_vs != tx_vs or entry_ss != tx_ss:
+                continue
+            
+            # KS is optional
+            entry_ks = normalize_symbol(entry.constant_symbol)
+            if entry_ks:
+                tx_ks = normalize_symbol(tx.constant_symbol)
+                if not tx_ks or entry_ks != tx_ks:
+                    continue
+            
+            if debug:
+                logger.debug(f"MATCH: tx.id={tx.id} VS={tx_vs} SS={tx_ss} matched entry VS={entry_vs} SS={entry_ss}")
+            matched_ids.add(tx.id)
+    
+    if debug:
+        logger.debug(f"Total matched transaction IDs: {matched_ids}")
+    
+    return matched_ids
+
 @router.get("/transactions", response_model=List[TransactionOut])
 def list_transactions(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
@@ -73,6 +148,7 @@ def list_transactions(
     bank_name: Optional[str] = Query(None, description="Filter by Bank Name (substring match)"),
     executor: Optional[str] = Query(None, description="Filter by Executor (substring match)"),
     transaction_id: Optional[str] = Query(None, description="Filter by Transaction ID (substring match)"),
+    hide_matched: bool = Query(False, description="Hide transactions that match the matching data"),
     db: Session = Depends(get_db)
 ):
     """
@@ -80,6 +156,13 @@ def list_transactions(
     All filter parameters support substring matching (case-insensitive).
     """
     query = db.query(Transaction)
+    
+    # Filter out matched transactions if requested
+    if hide_matched:
+        matched_ids = get_matched_transaction_ids(db, debug=True)
+        logger.info(f"[list_transactions] hide_matched=True, filtering out {len(matched_ids)} IDs: {matched_ids}")
+        if matched_ids:
+            query = query.filter(~Transaction.id.in_(matched_ids))
     
     # Apply filters with substring matching (case-insensitive)
     if variable_symbol:
@@ -125,6 +208,7 @@ def get_transactions_count(
     bank_name: Optional[str] = Query(None, description="Filter by Bank Name (substring match)"),
     executor: Optional[str] = Query(None, description="Filter by Executor (substring match)"),
     transaction_id: Optional[str] = Query(None, description="Filter by Transaction ID (substring match)"),
+    hide_matched: bool = Query(False, description="Hide transactions that match the matching data"),
     db: Session = Depends(get_db)
 ):
     """
@@ -132,6 +216,13 @@ def get_transactions_count(
     Useful for pagination.
     """
     query = db.query(Transaction)
+    
+    # Filter out matched transactions if requested
+    if hide_matched:
+        matched_ids = get_matched_transaction_ids(db, debug=True)
+        logger.info(f"[count] hide_matched=True, filtering out {len(matched_ids)} IDs: {matched_ids}")
+        if matched_ids:
+            query = query.filter(~Transaction.id.in_(matched_ids))
     
     # Apply the same filters as list_transactions
     if variable_symbol:
@@ -430,46 +521,21 @@ def get_matching_stats(db: Session = Depends(get_db)):
             return {
                 "total_matching_rows": 0,
                 "matched_transactions": 0,
+                "matched_ids": [],
                 "total_transactions": db.query(Transaction).count()
             }
         
-        # Find matched transactions
-        # Match by VS, SS, and optionally KS
-        matched_transaction_ids = set()
+        # Use the shared get_matched_transaction_ids function
+        matched_transaction_ids = get_matched_transaction_ids(db, debug=True)
+        total_transactions = db.query(Transaction).count()
         
-        matching_entries = db.query(MatchingData).all()
-        transactions = db.query(Transaction).all()
-        
-        for entry in matching_entries:
-            for tx in transactions:
-                # Match if VS matches (and both are not None/empty)
-                vs_match = (
-                    entry.variable_symbol and tx.variable_symbol and
-                    entry.variable_symbol.strip() == tx.variable_symbol.strip()
-                )
-                
-                # Match if SS matches (and both are not None/empty)
-                ss_match = (
-                    entry.specific_symbol and tx.specific_symbol and
-                    entry.specific_symbol.strip() == tx.specific_symbol.strip()
-                )
-                
-                # Match if KS matches (if provided in matching data)
-                ks_match = True
-                if entry.constant_symbol:
-                    ks_match = (
-                        tx.constant_symbol and
-                        entry.constant_symbol.strip() == tx.constant_symbol.strip()
-                    )
-                
-                # Transaction matches if VS and SS match, and KS matches if provided
-                if vs_match and ss_match and ks_match:
-                    matched_transaction_ids.add(tx.id)
+        logger.info(f"[stats] Matched IDs: {matched_transaction_ids}")
         
         return {
             "total_matching_rows": total_matching_rows,
+            "matched_ids": list(matched_transaction_ids),  # Include IDs for debugging
             "matched_transactions": len(matched_transaction_ids),
-            "total_transactions": len(transactions)
+            "total_transactions": total_transactions
         }
     except Exception as e:
         logger.error(f"Failed to get matching stats: {e}")

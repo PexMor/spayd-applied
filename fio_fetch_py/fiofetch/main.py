@@ -1,9 +1,21 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
 from .api import router
 from .config import get_config
 from .database import get_engine, init_db
 import os
+
+class NoCacheMiddleware(BaseHTTPMiddleware):
+    """Disable caching for API responses to prevent browser inconsistencies."""
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        # Add no-cache headers for API endpoints
+        if request.url.path.startswith("/api/"):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
 
 def create_app():
     config = get_config()
@@ -13,6 +25,9 @@ def create_app():
     init_db(engine)
     
     app = FastAPI(title="Fio Fetch API")
+    
+    # Add no-cache middleware for API responses
+    app.add_middleware(NoCacheMiddleware)
     
     app.include_router(router, prefix="/api/v1")
     

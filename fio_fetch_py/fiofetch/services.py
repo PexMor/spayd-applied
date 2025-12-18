@@ -3,12 +3,18 @@ import time
 from typing import List
 from fastapi import WebSocket
 from .fio import fetch_and_save_transactions
-from .database import get_session_local, get_engine
 from .config import get_config
 from .utils import mask_token
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Import the shared database components getter from api
+# This ensures we use the same engine across the application
+def _get_shared_db_components():
+    """Get the shared database components from api module."""
+    from .api import _get_db_components
+    return _get_db_components()
 
 class ConnectionManager:
     def __init__(self):
@@ -81,10 +87,9 @@ class FetchService:
                         })
                     )
 
-                # Setup database session
+                # Setup database session (use shared engine)
                 config = get_config()
-                engine = get_engine(config.db_path)
-                SessionLocal = get_session_local(engine)
+                _, SessionLocal = _get_shared_db_components()
                 db = SessionLocal()
                 
                 # Call async fetch function directly
@@ -111,6 +116,8 @@ class FetchService:
                 return {"status": "error", "message": error_message}
             finally:
                 if db:
-                    db.close()
+                    # For scoped_session, use remove() for proper cleanup
+                    _, SessionLocal = _get_shared_db_components()
+                    SessionLocal.remove()
 
 fetch_service = FetchService()

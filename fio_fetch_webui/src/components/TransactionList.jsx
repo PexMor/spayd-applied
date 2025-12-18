@@ -46,6 +46,7 @@ function TransactionList() {
 
     const [selectedTx, setSelectedTx] = useState(null);
     const [showFilters, setShowFilters] = useState(false);
+    const [showMatchingUpload, setShowMatchingUpload] = useState(false);
 
     // Debounce filter inputs (500ms delay)
     const debouncedFilters = useDebounce(transactionsFilters, 500);
@@ -61,7 +62,7 @@ function TransactionList() {
         }
     }, [debouncedFilters, transactionsAppliedFilters, setTransactionsAppliedFilters]);
 
-    // Load transactions function
+    // Load transactions function - uses backend filtering for hide_matched
     const loadTransactions = useCallback(async () => {
         try {
             setTransactionsLoading(true);
@@ -70,10 +71,10 @@ function TransactionList() {
                 Object.entries(transactionsAppliedFilters).filter(([_, value]) => value.trim() !== '')
             );
             
-            // Load transactions and count in parallel
+            // Load transactions and count in parallel, passing hideMatchedTransactions to backend
             const [transactionsData, countData] = await Promise.all([
-                getTransactions(transactionsPage * transactionsLimit, transactionsLimit, activeFilters),
-                getTransactionsCount(activeFilters),
+                getTransactions(transactionsPage * transactionsLimit, transactionsLimit, activeFilters, hideMatchedTransactions),
+                getTransactionsCount(activeFilters, hideMatchedTransactions),
             ]);
             
             setTransactions(transactionsData);
@@ -83,13 +84,15 @@ function TransactionList() {
         } finally {
             setTransactionsLoading(false);
         }
-    }, [transactionsPage, transactionsLimit, transactionsAppliedFilters, setTransactions, setTransactionsLoading, setTransactionsTotalCount]);
+    }, [transactionsPage, transactionsLimit, transactionsAppliedFilters, hideMatchedTransactions, setTransactions, setTransactionsLoading, setTransactionsTotalCount]);
 
     // Load matching stats and data on mount
     useEffect(() => {
         const loadMatchingData = async () => {
             try {
                 const [stats, data] = await Promise.all([getMatchingStats(), getMatchingData()]);
+                console.log('[Matching] Stats from backend:', stats);
+                console.log('[Matching] Data entries:', data?.length, data);
                 setMatchingStats(stats);
                 setMatchingData(data);
             } catch (error) {
@@ -104,38 +107,58 @@ function TransactionList() {
         loadTransactions();
     }, [loadTransactions]);
 
-    // Check if transaction is matched
+    // Helper to normalize symbol values - treats null, undefined, empty, "-", "null" as empty
+    const normalizeSymbol = useCallback((value) => {
+        if (value === null || value === undefined) return '';
+        const str = String(value).trim();
+        // Treat "-", "null", "undefined", "N/A" as empty values
+        if (str === '' || str === '-' || str.toLowerCase() === 'null' || str.toLowerCase() === 'undefined' || str.toLowerCase() === 'n/a') {
+            return '';
+        }
+        return str;
+    }, []);
+
+    // Check if transaction is matched (used for display purposes - backend handles actual filtering)
     const isTransactionMatched = useCallback((tx) => {
         if (!matchingData || matchingData.length === 0) return false;
 
         return matchingData.some((entry) => {
             // Normalize values for comparison
-            const entryVS = entry.variable_symbol ? String(entry.variable_symbol).trim() : '';
-            const txVS = tx.variable_symbol ? String(tx.variable_symbol).trim() : '';
-            const vsMatch = entryVS && txVS && entryVS === txVS;
+            const entryVS = normalizeSymbol(entry.variable_symbol);
+            const txVS = normalizeSymbol(tx.variable_symbol);
+            
+            const entrySS = normalizeSymbol(entry.specific_symbol);
+            const txSS = normalizeSymbol(tx.specific_symbol);
+            
+            // Skip entries that don't have both VS and SS (required for matching)
+            if (!entryVS || !entrySS) {
+                return false;
+            }
+            
+            // Transaction must have both VS and SS to be considered for matching
+            if (!txVS || !txSS) {
+                return false;
+            }
+            
+            // VS and SS must both match exactly
+            const vsMatch = entryVS === txVS;
+            const ssMatch = entrySS === txSS;
 
-            const entrySS = entry.specific_symbol ? String(entry.specific_symbol).trim() : '';
-            const txSS = tx.specific_symbol ? String(tx.specific_symbol).trim() : '';
-            const ssMatch = entrySS && txSS && entrySS === txSS;
-
+            // KS is optional - only check if matching entry specifies it
             let ksMatch = true;
-            if (entry.constant_symbol) {
-                const entryKS = String(entry.constant_symbol).trim();
-                const txKS = tx.constant_symbol ? String(tx.constant_symbol).trim() : '';
+            const entryKS = normalizeSymbol(entry.constant_symbol);
+            if (entryKS) {
+                const txKS = normalizeSymbol(tx.constant_symbol);
                 ksMatch = txKS && entryKS === txKS;
             }
 
             return vsMatch && ssMatch && ksMatch;
         });
-    }, [matchingData]);
+    }, [matchingData, normalizeSymbol]);
 
-    // Filter transactions based on hideMatchedTransactions
-    const filteredTransactions = useMemo(() => {
-        if (!hideMatchedTransactions || !matchingData || matchingData.length === 0) {
-            return transactions;
-        }
-        return transactions.filter((tx) => !isTransactionMatched(tx));
-    }, [transactions, hideMatchedTransactions, matchingData, isTransactionMatched]);
+    // Transactions are now filtered by the backend when hideMatchedTransactions is true
+    // No client-side filtering needed - backend returns already filtered data
+    const filteredTransactions = transactions;
 
     const handleFilterChange = useCallback((field, value) => {
         setTransactionsFilters({ ...transactionsFilters, [field]: value });
@@ -155,63 +178,70 @@ function TransactionList() {
     }, [transactionsTotalCount, transactionsLimit]);
 
     return (
-        <div>
-            {/* Matching Data Upload - always show */}
-            <MatchingDataUpload />
-
-            {/* Matching Stats and Controls - only show when matching data exists */}
-            {matchingStats && matchingStats.total_matching_rows > 0 && (
-                <div className="card mb-lg" style={{ background: 'linear-gradient(135deg, var(--primary-50), var(--primary-100))' }}>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <div className="text-sm text-secondary mb-xs">Matching Status</div>
-                            <div className="font-bold text-lg">
-                                {matchingStats.matched_transactions} / {matchingStats.total_transactions} transactions
-                                matched
-                            </div>
-                            <div className="text-sm text-secondary mt-xs">
-                                {matchingStats.total_matching_rows} matching row(s) loaded
-                            </div>
-                        </div>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer' }}>
-                            <input
-                                type="checkbox"
-                                checked={hideMatchedTransactions}
-                                onChange={(e) => setHideMatchedTransactions(e.target.checked)}
-                            />
-                            <span className="text-sm">Hide matched transactions</span>
-                        </label>
-                    </div>
-                </div>
-            )}
-
-            <div className="flex items-center justify-between mb-lg">
-                <h2>
-                    Transactions{' '}
+        <div className="transaction-list-container">
+            {/* Header with title and action buttons */}
+            <div className="tx-header">
+                <h2 className="tx-title">
+                    Transactions
                     {transactionsTotalCount > 0 && (
-                        <span className="text-secondary text-sm font-normal">
-                            ({hideMatchedTransactions && matchingStats ? filteredTransactions.length : transactionsTotalCount} total)
+                        <span className="tx-count">
+                            ({hideMatchedTransactions && matchingStats ? filteredTransactions.length : transactionsTotalCount})
                         </span>
                     )}
                 </h2>
-                <div className="flex gap-md">
-                    <button onClick={() => setShowFilters(!showFilters)} className="btn-secondary">
-                        <span>{showFilters ? '🔽' : '🔍'}</span>
-                        {showFilters ? 'Hide Filters' : 'Show Filters'}
-                        {hasActiveFilters && (
-                            <span className="badge badge-primary" style={{ marginLeft: 'var(--space-xs)' }}>
-                                ●
-                            </span>
+                <div className="tx-actions">
+                    <button 
+                        onClick={() => setShowMatchingUpload(!showMatchingUpload)} 
+                        className={`btn-icon ${showMatchingUpload ? 'active' : ''}`}
+                        title="Matching data"
+                    >
+                        <span>📁</span>
+                        {matchingStats && matchingStats.total_matching_rows > 0 && (
+                            <span className="badge-dot" />
                         )}
                     </button>
-                    <button onClick={loadTransactions} className="btn-secondary">
+                    <button 
+                        onClick={() => setShowFilters(!showFilters)} 
+                        className={`btn-icon ${showFilters ? 'active' : ''}`}
+                        title="Filters"
+                    >
+                        <span>{showFilters ? '🔽' : '🔍'}</span>
+                        {hasActiveFilters && <span className="badge-dot active" />}
+                    </button>
+                    <button onClick={loadTransactions} className="btn-icon" title="Refresh">
                         <span>🔄</span>
-                        Refresh
                     </button>
                 </div>
             </div>
 
-            {/* Filter Panel - Separate component to prevent re-renders */}
+            {/* Matching Data Upload (collapsible) */}
+            {showMatchingUpload && (
+                <div className="animate-fade-in">
+                    <MatchingDataUpload />
+                </div>
+            )}
+
+            {/* Matching Stats and Controls - only show when matching data exists */}
+            {matchingStats && matchingStats.total_matching_rows > 0 && !showMatchingUpload && (
+                <div className="matching-summary">
+                    <div className="matching-info">
+                        <span className="matching-badge">
+                            ✓ {matchingStats.matched_transactions}/{matchingStats.total_transactions}
+                        </span>
+                        <span className="text-sm text-secondary">matched</span>
+                    </div>
+                    <label className="hide-matched-toggle">
+                        <input
+                            type="checkbox"
+                            checked={hideMatchedTransactions}
+                            onChange={(e) => setHideMatchedTransactions(e.target.checked)}
+                        />
+                        <span>Hide matched</span>
+                    </label>
+                </div>
+            )}
+
+            {/* Filter Panel */}
             {showFilters && (
                 <FilterPanel
                     filters={transactionsFilters}
@@ -221,13 +251,13 @@ function TransactionList() {
                 />
             )}
 
-            {/* Transaction List - Separate component that only re-renders when data changes */}
+            {/* Transaction List Content */}
             <TransactionListContent
                 transactions={filteredTransactions}
                 loading={transactionsLoading}
                 page={transactionsPage}
                 totalPages={totalPages}
-                totalCount={hideMatchedTransactions && matchingStats ? filteredTransactions.length : transactionsTotalCount}
+                totalCount={transactionsTotalCount}
                 limit={transactionsLimit}
                 onPageChange={setTransactionsPage}
                 onSelectTransaction={setSelectedTx}
@@ -242,91 +272,84 @@ function TransactionList() {
     );
 }
 
-// Separate Filter Panel component - only re-renders when filter inputs change
+// Filter Panel component
 function FilterPanel({ filters, onFilterChange, onClearFilters, hasActiveFilters }) {
     return (
-        <div className="card mb-lg animate-fade-in" style={{ background: 'var(--bg-secondary)' }}>
-            <div className="card-header">
-                <div className="flex items-center justify-between">
-                    <h3>Filter Transactions</h3>
-                    {hasActiveFilters && (
-                        <button
-                            onClick={onClearFilters}
-                            className="btn-secondary"
-                            style={{ padding: 'var(--space-xs) var(--space-sm)', fontSize: '0.875rem' }}
-                        >
-                            Clear All
-                        </button>
-                    )}
-                </div>
+        <div className="filter-panel animate-fade-in">
+            <div className="filter-header">
+                <h3>Filter Transactions</h3>
+                {hasActiveFilters && (
+                    <button onClick={onClearFilters} className="btn-text-sm">
+                        Clear All
+                    </button>
+                )}
             </div>
 
-            <div className="grid grid-2 gap-md">
+            <div className="filter-grid">
                 <FilterInput
-                    label="Variable Symbol (VS)"
+                    label="Variable Symbol"
                     value={filters.variable_symbol}
                     onChange={(value) => onFilterChange('variable_symbol', value)}
-                    placeholder="e.g., 12345"
+                    placeholder="VS"
                 />
                 <FilterInput
-                    label="Specific Symbol (SS)"
+                    label="Specific Symbol"
                     value={filters.specific_symbol}
                     onChange={(value) => onFilterChange('specific_symbol', value)}
-                    placeholder="e.g., 67890"
+                    placeholder="SS"
                 />
                 <FilterInput
-                    label="Constant Symbol (KS)"
+                    label="Constant Symbol"
                     value={filters.constant_symbol}
                     onChange={(value) => onFilterChange('constant_symbol', value)}
-                    placeholder="e.g., 0308"
+                    placeholder="KS"
                 />
                 <FilterInput
                     label="Counter Account"
                     value={filters.counter_account}
                     onChange={(value) => onFilterChange('counter_account', value)}
-                    placeholder="e.g., CZ6508000000192000145399"
+                    placeholder="Account"
                 />
                 <FilterInput
-                    label="Counter Account Name"
+                    label="Account Name"
                     value={filters.counter_account_name}
                     onChange={(value) => onFilterChange('counter_account_name', value)}
-                    placeholder="e.g., John Doe"
+                    placeholder="Name"
                 />
                 <FilterInput
                     label="Bank Code"
                     value={filters.bank_code}
                     onChange={(value) => onFilterChange('bank_code', value)}
-                    placeholder="e.g., 0800"
+                    placeholder="Code"
                 />
                 <FilterInput
                     label="Bank Name"
                     value={filters.bank_name}
                     onChange={(value) => onFilterChange('bank_name', value)}
-                    placeholder="e.g., Česká spořitelna"
+                    placeholder="Bank"
                 />
                 <FilterInput
                     label="Executor"
                     value={filters.executor}
                     onChange={(value) => onFilterChange('executor', value)}
-                    placeholder="e.g., John Doe"
+                    placeholder="Executor"
                 />
                 <FilterInput
                     label="Transaction ID"
                     value={filters.transaction_id}
                     onChange={(value) => onFilterChange('transaction_id', value)}
-                    placeholder="e.g., 123456789"
+                    placeholder="ID"
                 />
             </div>
 
-            <div className="mt-md text-sm text-secondary">
-                💡 <strong>Tip:</strong> All filters support substring matching (case-insensitive). Filters are applied
-                automatically after you stop typing (500ms delay).
-            </div>
+            <p className="filter-hint">
+                💡 Filters are applied automatically (500ms delay)
+            </p>
         </div>
     );
 }
 
-// Separate Transaction List Content component - only re-renders when transactions/loading/page changes
+// Transaction List Content component
 function TransactionListContent({
     transactions,
     loading,
@@ -340,9 +363,9 @@ function TransactionListContent({
 }) {
     const formatDate = (dateStr) => {
         return new Date(dateStr).toLocaleDateString('cs-CZ', {
-            year: 'numeric',
-            month: 'long',
             day: 'numeric',
+            month: 'short',
+            year: 'numeric',
         });
     };
 
@@ -355,134 +378,159 @@ function TransactionListContent({
 
     if (loading) {
         return (
-            <div className="card">
-                <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
-                    <div className="spinner" style={{ width: '3rem', height: '3rem' }}></div>
-                    <p className="text-secondary mt-md">Loading transactions...</p>
-                </div>
+            <div className="tx-loading">
+                <div className="spinner spinner-lg" />
+                <p>Loading transactions...</p>
+            </div>
+        );
+    }
+
+    if (transactions.length === 0) {
+        return (
+            <div className="tx-empty">
+                <p>No transactions found.</p>
+                <p className="text-sm">Try fetching data or adjusting your filters.</p>
             </div>
         );
     }
 
     return (
-        <div className="card">
-            {transactions.length === 0 ? (
-                <p className="text-secondary" style={{ textAlign: 'center', padding: 'var(--space-xl)' }}>
-                    No transactions found. Try fetching data from the Fetch tab.
-                </p>
-            ) : (
-                <>
-                    <div style={{ overflowX: 'auto' }}>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Counter Party</th>
-                                    <th>Account</th>
-                                    <th>VS</th>
-                                    <th>KS</th>
-                                    <th>SS</th>
-                                    <th>Amount</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {transactions.map((tx) => {
-                                    const isMatched = isTransactionMatched ? isTransactionMatched(tx) : false;
-                                    return (
-                                        <tr
-                                            key={tx.id}
-                                            style={{
-                                                background: isMatched
-                                                    ? 'linear-gradient(135deg, hsla(var(--success-hue), 70%, 50%, 0.1), hsla(var(--success-hue), 70%, 50%, 0.05))'
-                                                    : 'transparent',
-                                                borderLeft: isMatched ? '3px solid var(--success)' : 'none',
-                                            }}
+        <>
+            {/* Desktop Table View */}
+            <div className="tx-table-wrapper">
+                <table className="tx-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Counter Party</th>
+                            <th className="hide-mobile">Account</th>
+                            <th>VS</th>
+                            <th className="hide-mobile">KS</th>
+                            <th className="hide-mobile">SS</th>
+                            <th>Amount</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {transactions.map((tx) => {
+                            const isMatched = isTransactionMatched ? isTransactionMatched(tx) : false;
+                            return (
+                                <tr key={tx.id} className={isMatched ? 'matched' : ''}>
+                                    <td className="tx-date">
+                                        {formatDate(tx.date)}
+                                        {isMatched && <span className="match-indicator">✓</span>}
+                                    </td>
+                                    <td className="tx-party">
+                                        <div className="party-name">{tx.counter_account_name || 'N/A'}</div>
+                                        {tx.bank_name && (
+                                            <div className="party-bank">{tx.bank_name}</div>
+                                        )}
+                                    </td>
+                                    <td className="tx-account hide-mobile">
+                                        {tx.counter_account || '-'}
+                                        {tx.bank_code && `/${tx.bank_code}`}
+                                    </td>
+                                    <td className="tx-symbol">{tx.variable_symbol || '-'}</td>
+                                    <td className="tx-symbol hide-mobile">{tx.constant_symbol || '-'}</td>
+                                    <td className="tx-symbol hide-mobile">{tx.specific_symbol || '-'}</td>
+                                    <td className="tx-amount">
+                                        <span className={tx.amount >= 0 ? 'positive' : 'negative'}>
+                                            {formatAmount(tx.amount, tx.currency)}
+                                        </span>
+                                    </td>
+                                    <td className="tx-actions-cell">
+                                        <button
+                                            onClick={() => onSelectTransaction(tx)}
+                                            className="btn-details"
                                         >
-                                            <td className="text-sm">
-                                                {formatDate(tx.date)}
-                                                {isMatched && (
-                                                    <span className="badge badge-success" style={{ marginLeft: 'var(--space-xs)', fontSize: '0.75rem' }}>
-                                                        ✓
-                                                    </span>
-                                                )}
-                                            </td>
-                                        <td>
-                                            <div className="font-medium">{tx.counter_account_name || 'N/A'}</div>
-                                            {tx.bank_name && (
-                                                <div className="text-sm text-secondary">{tx.bank_name}</div>
-                                            )}
-                                        </td>
-                                        <td className="text-sm font-mono">
-                                            {tx.counter_account || '-'}
-                                            {tx.bank_code && `/${tx.bank_code}`}
-                                        </td>
-                                        <td className="text-sm">{tx.variable_symbol || '-'}</td>
-                                        <td className="text-sm">{tx.constant_symbol || '-'}</td>
-                                        <td className="text-sm">{tx.specific_symbol || '-'}</td>
-                                        <td>
-                                            <span
-                                                className="font-semibold"
-                                                style={{
-                                                    color: tx.amount >= 0 ? 'var(--success)' : 'var(--danger)',
-                                                }}
-                                            >
-                                                {formatAmount(tx.amount, tx.currency)}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <button
-                                                onClick={() => onSelectTransaction(tx)}
-                                                className="btn-secondary"
-                                                style={{
-                                                    padding: 'var(--space-xs) var(--space-sm)',
-                                                    fontSize: '0.875rem',
-                                                }}
-                                            >
-                                                Details
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                                            •••
+                                        </button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
 
-                    {/* Pagination */}
-                    <div
-                        className="flex items-center justify-between mt-lg"
-                        style={{
-                            paddingTop: 'var(--space-lg)',
-                            borderTop: '1px solid var(--border-color)',
-                        }}
-                    >
-                        <button
-                            onClick={() => onPageChange(Math.max(0, page - 1))}
-                            disabled={page === 0 || loading}
-                            className="btn-secondary"
+            {/* Mobile Card View */}
+            <div className="tx-cards">
+                {transactions.map((tx) => {
+                    const isMatched = isTransactionMatched ? isTransactionMatched(tx) : false;
+                    return (
+                        <div 
+                            key={tx.id} 
+                            className={`tx-card ${isMatched ? 'matched' : ''}`}
+                            onClick={() => onSelectTransaction(tx)}
                         >
-                            ← Previous
-                        </button>
-                        <span className="text-secondary">
-                            Page {page + 1} of {totalPages || 1} ({totalCount} total)
-                        </span>
-                        <button
-                            onClick={() => onPageChange(page + 1)}
-                            disabled={page >= totalPages - 1 || loading || transactions.length < limit}
-                            className="btn-secondary"
-                        >
-                            Next →
-                        </button>
-                    </div>
-                </>
-            )}
-        </div>
+                            <div className="tx-card-header">
+                                <span className="tx-card-date">
+                                    {formatDate(tx.date)}
+                                    {isMatched && <span className="match-indicator">✓</span>}
+                                </span>
+                                <span className={`tx-card-amount ${tx.amount >= 0 ? 'positive' : 'negative'}`}>
+                                    {formatAmount(tx.amount, tx.currency)}
+                                </span>
+                            </div>
+                            <div className="tx-card-party">{tx.counter_account_name || 'N/A'}</div>
+                            {tx.bank_name && (
+                                <div className="tx-card-bank">{tx.bank_name}</div>
+                            )}
+                            <div className="tx-card-symbols">
+                                {tx.variable_symbol && <span>VS: {tx.variable_symbol}</span>}
+                                {tx.specific_symbol && <span>SS: {tx.specific_symbol}</span>}
+                                {tx.constant_symbol && <span>KS: {tx.constant_symbol}</span>}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Pagination */}
+            <div className="tx-pagination">
+                <button
+                    onClick={() => onPageChange(Math.max(0, page - 1))}
+                    disabled={page === 0 || loading}
+                    className="btn-pagination"
+                >
+                    ← Prev
+                </button>
+                <span className="pagination-info">
+                    {page + 1} / {totalPages || 1}
+                </span>
+                <button
+                    onClick={() => onPageChange(page + 1)}
+                    disabled={page >= totalPages - 1 || loading || transactions.length < limit}
+                    className="btn-pagination"
+                >
+                    Next →
+                </button>
+            </div>
+        </>
     );
 }
 
-// Separate Transaction Detail Modal component
+// Transaction Detail Modal component
 function TransactionDetailModal({ transaction, onClose }) {
+    // Prevent body scroll when modal is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
+
+    // Handle Escape key
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
+
     const formatDate = (dateStr) => {
         return new Date(dateStr).toLocaleDateString('cs-CZ', {
             year: 'numeric',
@@ -499,92 +547,62 @@ function TransactionDetailModal({ transaction, onClose }) {
     };
 
     return (
-        <div
-            style={{
-                position: 'fixed',
-                inset: 0,
-                background: 'rgba(0, 0, 0, 0.5)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 'var(--space-lg)',
-                zIndex: 1000,
-            }}
-            onClick={onClose}
-        >
-            <div
-                className="card animate-fade-in"
-                style={{ maxWidth: '600px', width: '100%', maxHeight: '80vh', overflow: 'auto' }}
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="card-header">
-                    <div className="flex items-center justify-between">
-                        <h3>Transaction Details</h3>
-                        <button
-                            onClick={onClose}
-                            className="btn-secondary"
-                            style={{ padding: 'var(--space-xs) var(--space-sm)' }}
-                        >
-                            ✕
-                        </button>
-                    </div>
+        <div className="tx-modal-overlay" onClick={onClose}>
+            <div className="tx-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="tx-modal-header">
+                    <h3>Transaction Details</h3>
+                    <button onClick={onClose} className="tx-modal-close">✕</button>
                 </div>
 
-                <div className="flex flex-col gap-md">
+                <div className="tx-modal-content">
                     <DetailRow label="Date" value={formatDate(transaction.date)} />
-                    <DetailRow label="Amount" value={formatAmount(transaction.amount, transaction.currency)} />
-                    <DetailRow label="Counter Account" value={transaction.counter_account} />
+                    <DetailRow 
+                        label="Amount" 
+                        value={formatAmount(transaction.amount, transaction.currency)} 
+                        className={transaction.amount >= 0 ? 'positive' : 'negative'}
+                    />
+                    <DetailRow label="Counter Account" value={transaction.counter_account} mono />
                     <DetailRow label="Counter Account Name" value={transaction.counter_account_name} />
                     <DetailRow label="Bank Code" value={transaction.bank_code} />
                     <DetailRow label="Bank Name" value={transaction.bank_name} />
-                    <DetailRow label="Variable Symbol" value={transaction.variable_symbol} />
-                    <DetailRow label="Constant Symbol" value={transaction.constant_symbol} />
-                    <DetailRow label="Specific Symbol" value={transaction.specific_symbol} />
+                    <DetailRow label="Variable Symbol" value={transaction.variable_symbol} mono />
+                    <DetailRow label="Constant Symbol" value={transaction.constant_symbol} mono />
+                    <DetailRow label="Specific Symbol" value={transaction.specific_symbol} mono />
                     <DetailRow label="User Identification" value={transaction.user_identification} />
                     <DetailRow label="Message for Recipient" value={transaction.message_for_recipient} />
                     <DetailRow label="Type" value={transaction.type} />
                     <DetailRow label="Executor" value={transaction.executor} />
                     <DetailRow label="Specification" value={transaction.specification} />
                     <DetailRow label="Comment" value={transaction.comment} />
-                    <DetailRow label="BIC" value={transaction.bic} />
-                    <DetailRow label="Transaction ID" value={transaction.transaction_id} />
+                    <DetailRow label="BIC" value={transaction.bic} mono />
+                    <DetailRow label="Transaction ID" value={transaction.transaction_id} mono />
                 </div>
             </div>
         </div>
     );
 }
 
-function DetailRow({ label, value }) {
+function DetailRow({ label, value, className, mono }) {
     if (!value) return null;
 
     return (
-        <div>
-            <div className="text-sm text-secondary mb-xs">{label}</div>
-            <div className="font-medium">{value}</div>
+        <div className="detail-row">
+            <div className="detail-label">{label}</div>
+            <div className={`detail-value ${className || ''} ${mono ? 'mono' : ''}`}>{value}</div>
         </div>
     );
 }
 
 function FilterInput({ label, value, onChange, placeholder }) {
     return (
-        <div>
-            <label className="text-sm text-secondary mb-xs" style={{ display: 'block' }}>
-                {label}
-            </label>
+        <div className="filter-input-group">
+            <label className="filter-label">{label}</label>
             <input
                 type="text"
                 value={value}
                 onInput={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
-                style={{
-                    width: '100%',
-                    padding: 'var(--space-sm) var(--space-md)',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--bg-primary)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.875rem',
-                }}
+                className="filter-input"
             />
         </div>
     );

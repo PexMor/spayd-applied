@@ -21,7 +21,7 @@ const useAppStore = create(
         transactions: [],
         transactionsLoading: false,
         transactionsPage: 0,
-        transactionsLimit: 50,
+        transactionsLimit: parseInt(localStorage.getItem('rowsPerPage')) || 50,
         transactionsTotalCount: 0,
         transactionsFilters: {
             variable_symbol: '',
@@ -54,6 +54,10 @@ const useAppStore = create(
         matchingData: [],
         matchingStats: null,
         hideMatchedTransactions: false,
+        matchingDataUrl: localStorage.getItem('matchingDataUrl') || '',
+        
+        // UI Settings (persisted in localStorage)
+        rowsPerPage: parseInt(localStorage.getItem('rowsPerPage')) || 50,
         
         // Actions
         setConnected: (connected) => set((state) => {
@@ -235,6 +239,19 @@ const useAppStore = create(
         clearMatchingData: () => set((state) => {
             state.matchingData = [];
             state.matchingStats = null;
+        }),
+        
+        // Settings actions
+        setRowsPerPage: (rows) => set((state) => {
+            state.rowsPerPage = rows;
+            state.transactionsLimit = rows;
+            state.transactionsPage = 0; // Reset to first page
+            localStorage.setItem('rowsPerPage', rows.toString());
+        }),
+        
+        setMatchingDataUrl: (url) => set((state) => {
+            state.matchingDataUrl = url;
+            localStorage.setItem('matchingDataUrl', url);
         }),
     }))
 );
